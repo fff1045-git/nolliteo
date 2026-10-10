@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>2048 머지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@700&display=swap">
+<style>
+  :root { --ink: #1A1033; --size: 340px; --gap: 10px; --cell: 72.5px; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+  body {
+    background-color: #1A1033; background-image: radial-gradient(rgba(255,255,255,.07) 1.4px, transparent 1.6px); background-size: 18px 18px;
+    font-family: Jua, sans-serif; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  }
+  .head { width: var(--size); display: flex; align-items: stretch; gap: 8px; }
+  .logo { background: #FFD23F; color: var(--ink); border: 3px solid var(--ink); box-shadow: 0 4px 0 #000; border-radius: 16px; font-size: 26px; padding: 0 12px; display: grid; place-items: center; transform: rotate(-4deg); }
+  .box { flex: 1; min-width: 0; background: rgba(255,255,255,.1); border: 2.5px solid rgba(255,255,255,.7); border-radius: 14px; text-align: center; padding: 4px 6px; line-height: 1.15; }
+  .box small { font-size: 12px; color: #B9A3FF; display: block; }
+  .box b { font-weight: 400; font-size: 22px; color: #FFD23F; display: block; overflow: hidden; text-overflow: ellipsis; }
+  button { font: inherit; cursor: pointer; }
+  .restart { min-width: 48px; border: 3px solid var(--ink); border-radius: 14px; background: #fff; color: var(--ink); box-shadow: 0 4px 0 #000; display: grid; place-items: center; padding: 0 8px; }
+  .restart:active, .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; }
+  .board { position: relative; width: var(--size); height: var(--size); background: #2A1F55; border: 3px solid rgba(255,255,255,.85); border-radius: 22px; padding: var(--gap); }
+  .bg { position: absolute; width: var(--cell); height: var(--cell); border-radius: 14px; background: rgba(255,255,255,.07); }
+  .tile { position: absolute; left: 0; top: 0; width: var(--cell); height: var(--cell); transition: transform 110ms ease-in-out; z-index: 2; }
+  .tile .in { width: 100%; height: 100%; border: 3px solid var(--ink); border-radius: 14px; display: grid; place-items: center; color: var(--ink); box-shadow: 0 4px 0 #000; position: relative; overflow: hidden; }
+  .tile .in::after { content: ''; position: absolute; left: 14%; top: 10%; width: 30%; height: 12%; border-radius: 9px; background: rgba(255,255,255,.5); }
+  .tile.new .in { animation: appear 160ms ease-out 90ms backwards; }
+  .tile.merged { z-index: 3; }
+  .tile.merged .in { animation: pop 180ms ease-out; }
+  @keyframes appear { from { transform: scale(0); } }
+  @keyframes pop { 50% { transform: scale(1.18); } }
+  .hint { font-family: "Noto Sans KR", sans-serif; font-weight: 700; font-size: 13px; color: rgba(255,255,255,.6); text-align: center; }
+  .over { position: fixed; inset: 0; background: rgba(26,16,51,.72); display: none; place-items: center; z-index: 10; }
+  .over.on { display: grid; }
+  .panel { width: min(84vw, 330px); background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 24px; box-shadow: 0 6px 0 #000; padding: 24px 20px 20px; text-align: center; animation: pop 250ms ease-out; }
+  .panel h2 { margin: 0; font-weight: 400; font-size: 32px; }
+  .panel p { font-family: "Noto Sans KR", sans-serif; font-size: 14px; color: #5A4F7A; margin: 8px 0 0; }
+  .panel .s { font-size: 50px; color: #6C4CF5; line-height: 1.1; margin-top: 6px; }
+  .btn { margin-top: 14px; width: 100%; min-height: 54px; border: 3px solid var(--ink); border-radius: 18px; background: #FFD23F; box-shadow: 0 4px 0 var(--ink); font-size: 21px; color: var(--ink); }
+  .btn.ghost { background: #EEE8FF; }
+  .toast { position: fixed; left: 50%; top: 18%; transform: translateX(-50%); background: #FFD23F; color: var(--ink); border: 3px solid var(--ink); border-radius: 14px; padding: 6px 16px; font-size: 20px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 5; }
+  .toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="logo" aria-hidden="true">2048</div>
+    <div class="box"><small>점수</small><b id="score">0</b></div>
+    <div class="box"><small>최고</small><b id="best">0</b></div>
+    <button class="restart" id="restart" aria-label="새 게임">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4"/></svg>
+    </button>
+  </div>
+  <div class="board" id="board" aria-label="2048 게임 판" role="application"></div>
+  <p class="hint">위아래·좌우로 밀어서 같은 숫자를 합치세요 · 키보드 방향키도 돼요</p>
+  <div class="toast" id="toast" role="status"></div>
+
+  <div class="over" id="over" role="dialog" aria-label="게임 결과">
+    <div class="panel">
+      <h2 id="overTitle">더 움직일 수 없어요</h2>
+      <div class="s" id="overScore">0</div>
+      <p id="overSub">최고 기록 0</p>
+      <button class="btn" id="overMain">다시 하기</button>
+      <button class="btn ghost" id="overAlt" hidden>새 게임</button>
+    </div>
+  </div>
+
+<script src="../../sdk/playground-sdk.js" data-game="2048"></script>
+<script>
+(() => {
+  'use strict';
+  const N = 4;
+  const STYLE = {
+    2: ['#FFFFFF', '#1A1033'], 4: ['#F3EEFF', '#1A1033'], 8: ['#FFD23F', '#1A1033'], 16: ['#FF8C42', '#1A1033'],
+    32: ['#FF5DA2', '#FFFFFF'], 64: ['#E8336F', '#FFFFFF'], 128: ['#2EE6A6', '#1A1033'], 256: ['#4CC9F0', '#1A1033'],
+    512: ['#B9A3FF', '#1A1033'], 1024: ['#6C4CF5', '#FFFFFF'], 2048: ['#FFD23F', '#E8336F'],
+  };
+  const boardEl = document.getElementById('board');
+  const $ = id => document.getElementById(id);
+  let grid, tiles, score, best = 0, won = false, keepGoing = false, over = false, started = false, busy = false, nextId = 1;
+  let cell = 72, gap = 10;
+
+  // ---------- 배치 ----------
+  function layout() {
+    const size = Math.floor(Math.min(window.innerWidth - 24, (window.innerHeight - 170), 480));
+    gap = Math.max(6, Math.round(size * .03));
+    cell = (size - 6 - gap * (N + 1)) / N;
+    document.documentElement.style.setProperty('--size', size + 'px');
+    document.documentElement.style.setProperty('--gap', gap + 'px');
+    document.documentElement.style.setProperty('--cell', cell + 'px');
+    boardEl.querySelectorAll('.bg').forEach(b => b.remove());
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const b = document.createElement('div'); b.className = 'bg';
+      b.style.left = (gap + c * (cell + gap)) + 'px'; b.style.top = (gap + r * (cell + gap)) + 'px';
+      boardEl.prepend(b);
+    }
+    tiles?.forEach(t => { position(t); font(t); });
+  }
+  const xy = (r, c) => [gap + c * (cell + gap), gap + r * (cell + gap)];
+  function position(t) { const [x, y] = xy(t.r, t.c); t.el.style.transform = `translate(${x}px, ${y}px)`; }
+  function font(t) {
+    const d = String(t.v).length;
+    t.el.firstChild.style.fontSize = Math.round(cell * (d <= 2 ? .5 : d === 3 ? .4 : .32)) + 'px';
+  }
+  function paint(t) {
+    const [bg, fg] = STYLE[t.v] || ['#1A1033', '#FFD23F'];
+    const inEl = t.el.firstChild;
+    inEl.style.background = bg; inEl.style.color = fg; inEl.textContent = t.v;
+    if (t.v > 2048) inEl.style.borderColor = '#FFD23F';
+    font(t);
+  }
+  function makeTile(v, r, c, cls) {
+    const el = document.createElement('div');
+    el.className = 'tile ' + (cls || '');
+    el.innerHTML = '<div class="in"></div>';
+    const t = { id: nextId++, v, r, c, el };
+    paint(t); position(t);
+    boardEl.append(el);
+    return t;
+  }
+
+  // ---------- 상태 ----------
+  function emptyCells() {
+    const out = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!grid[r][c]) out.push([r, c]);
+    return out;
+  }
+  function spawn() {
+    const e = emptyCells();
+    if (!e.length) return;
+    const [r, c] = e[Math.floor(Math.random() * e.length)];
+    const t = makeTile(Math.random() < .9 ? 2 : 4, r, c, 'new');
+    grid[r][c] = t; tiles.push(t);
+  }
+  function clearBoard() { tiles?.forEach(t => t.el.remove()); tiles = []; grid = Array.from({ length: N }, () => Array(N).fill(null)); }
+  function newGame() {
+    clearBoard(); score = 0; won = false; keepGoing = false; over = false; started = false;
+    spawn(); spawn();
+    $('over').classList.remove('on');
+    updateScore(); persist();
+  }
+  function snapshot() { return grid.map(row => row.map(t => (t ? t.v : 0))); }
+  function persist() { PG.save(over ? { best } : { cells: snapshot(), score, best, won, keepGoing }); }
+  function updateScore() {
+    if (score > best) best = score;
+    $('score').textContent = score.toLocaleString('ko-KR');
+    $('best').textContent = best.toLocaleString('ko-KR');
+    PG.score(score);
+  }
+
+  // ---------- 이동 ----------
+  const DIRS = { left: [0, -1], right: [0, 1], up: [-1, 0], down: [1, 0] };
+  function move(dir) {
+    if (busy || over || $('over').classList.contains('on')) return;
+    const [dr, dc] = DIRS[dir];
+    const order = [...Array(N).keys()];
+    const rows = dr === 1 ? order.slice().reverse() : order;
+    const cols = dc === 1 ? order.slice().reverse() : order;
+    let moved = false, gained = 0;
+    const mergedInto = new Set();
+    const removing = [];
+
+    for (const r of rows) for (const c of cols) {
+      const t = grid[r][c];
+      if (!t) continue;
+      let nr = r, nc = c;
+      while (true) {
+        const tr = nr + dr, tc = nc + dc;
+        if (tr < 0 || tc < 0 || tr >= N || tc >= N) break;
+        const o = grid[tr][tc];
+        if (!o) { nr = tr; nc = tc; continue; }
+        if (o.v === t.v && !mergedInto.has(o.id)) { nr = tr; nc = tc; }
+        break;
+      }
+      if (nr === r && nc === c) continue;
+      moved = true;
+      grid[r][c] = null;
+      const target = grid[nr][nc];
+      t.r = nr; t.c = nc; position(t);
+      if (target) {
+        // 합치기: 이동한 타일은 사라지고, 목표 타일 숫자가 두 배
+        mergedInto.add(target.id);
+        target.v *= 2; gained += target.v;
+        removing.push([t, target]);
+      } else grid[nr][nc] = t;
+    }
+    if (!moved) return;
+    if (!started) { started = true; PG.gameStart(); }
+    busy = true;
+    score += gained;
+    setTimeout(() => {
+      for (const [t, target] of removing) {
+        t.el.remove(); tiles = tiles.filter(x => x !== t);
+        paint(target); target.el.classList.remove('merged'); void target.el.offsetWidth; target.el.classList.add('merged');
+      }
+      tiles.forEach(t => t.el.classList.remove('new'));
+      spawn();
+      updateScore();
+      busy = false;
+      if (gained) PG.vibrate(12);
+      if (!won && tiles.some(t => t.v >= 2048)) { won = true; persist(); showWin(); return; }
+      if (!canMove()) { lose(); return; }
+      persist();
+    }, 115);
+  }
+  function canMove() {
+    if (emptyCells().length) return true;
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const v = grid[r][c].v;
+      if ((c + 1 < N && grid[r][c + 1].v === v) || (r + 1 < N && grid[r + 1][c].v === v)) return true;
+    }
+    return false;
+  }
+  function lose() {
+    over = true; started = false;
+    persist();
+    PG.gameOver(score);
+    setTimeout(() => panel('더 움직일 수 없어요', score, `최고 기록 ${best.toLocaleString('ko-KR')}`, '다시 하기', null), 500);
+  }
+  function showWin() { panel('2048 달성!', score, '대단해요! 더 큰 숫자에 도전해 볼까요?', '계속하기', '새 게임'); }
+  let onMain = null, onAlt = null;
+  function panel(title, s, sub, main, alt) {
+    $('overTitle').textContent = title;
+    $('overScore').textContent = s.toLocaleString('ko-KR');
+    $('overSub').textContent = sub;
+    $('overMain').textContent = main;
+    $('overAlt').hidden = !alt;
+    if (alt) $('overAlt').textContent = alt;
+    onMain = over ? newGame : () => { keepGoing = true; $('over').classList.remove('on'); persist(); };
+    onAlt = () => { if (!over) { PG.gameOver(score); } newGame(); };
+    $('over').classList.add('on');
+    $('overMain').focus();
+  }
+  $('overMain').addEventListener('click', () => onMain && onMain());
+  $('overAlt').addEventListener('click', () => onAlt && onAlt());
+  $('restart').addEventListener('click', () => {
+    if (started && !over) PG.gameOver(score);
+    newGame();
+  });
+
+  // ---------- 입력: 스와이프 + 방향키 ----------
+  let sx = 0, sy = 0, tracking = false;
+  document.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; tracking = true; sx = e.clientX; sy = e.clientY; });
+  document.addEventListener('pointerup', e => {
+    if (!tracking) return; tracking = false;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+    move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+  });
+  document.addEventListener('pointercancel', () => { tracking = false; });
+  const KEYS = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', a: 'left', d: 'right', w: 'up', s: 'down' };
+  document.addEventListener('keydown', e => { const d = KEYS[e.key]; if (d) { e.preventDefault(); move(d); } });
+
+  function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 1500); }
+
+  // ---------- 시작 (이어하기) ----------
+  window.addEventListener('resize', layout);
+  layout();
+  PG.load().then(save => {
+    if (save && typeof save.best === 'number') best = save.best;
+    if (save && Array.isArray(save.cells) && save.cells.length === N) {
+      clearBoard();
+      save.cells.forEach((row, r) => row.forEach((v, c) => { if (v) { const t = makeTile(v, r, c, 'new'); grid[r][c] = t; tiles.push(t); } }));
+      score = save.score || 0; won = !!save.won; keepGoing = !!save.keepGoing;
+      updateScore();
+      if (!tiles.length) newGame(); else toast('이어하기!');
+      if (tiles.length && !canMove()) newGame();
+    } else newGame();
+    PG.ready();
+  });
+})();
+</script>
+</body>
+</html>

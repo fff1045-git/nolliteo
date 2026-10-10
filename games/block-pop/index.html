@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>블록 팡팡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; background: #1A1033; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; }
+  .ui { position: fixed; font-family: Jua, sans-serif; color: #1A1033; }
+  #sound { top: max(10px, env(safe-area-inset-top)); right: 10px; width: 44px; height: 44px; border-radius: 50%; border: 3px solid #fff; background: rgba(255,255,255,.1); color: #fff; display: grid; place-items: center; padding: 0; cursor: pointer; }
+  #over { inset: 0; display: none; place-items: center; background: rgba(26,16,51,.72); }
+  #over.on { display: grid; }
+  .panel { width: min(84vw, 340px); background: #fff; border: 3px solid #1A1033; border-radius: 24px; box-shadow: 0 6px 0 #1A1033; padding: 24px 20px 20px; text-align: center; animation: pop .25s ease-out; }
+  .panel h2 { margin: 0; font-weight: 400; font-size: 34px; }
+  .panel .s { font-size: 54px; color: #6C4CF5; line-height: 1.1; margin: 8px 0 2px; }
+  .panel .b { font-family: "Noto Sans KR", sans-serif; font-size: 14px; color: #5A4F7A; }
+  .panel .new { display: inline-block; margin-top: 8px; background: #FF5DA2; color: #fff; border: 2.5px solid #1A1033; border-radius: 10px; padding: 2px 10px; transform: rotate(-4deg); }
+  .panel button { margin-top: 18px; width: 100%; min-height: 56px; border: 3px solid #1A1033; border-radius: 18px; background: #FFD23F; box-shadow: 0 4px 0 #1A1033; font: inherit; font-size: 22px; color: #1A1033; cursor: pointer; }
+  .panel button:active { transform: translateY(3px); box-shadow: 0 1px 0 #1A1033; }
+  #msg { left: 50%; top: 38%; transform: translate(-50%, -50%); background: #FFD23F; border: 3px solid #1A1033; border-radius: 16px; padding: 8px 18px; font-size: 22px; box-shadow: 0 4px 0 #1A1033; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; }
+  #msg.on { opacity: 1; }
+  @keyframes pop { from { transform: scale(.8); opacity: 0; } }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="블록 팡팡 게임 판"></canvas>
+<button id="sound" class="ui" aria-label="소리 끄기"></button>
+<div id="msg" class="ui" role="status"></div>
+<div id="over" class="ui" role="dialog" aria-label="게임 결과">
+  <div class="panel">
+    <h2>더 놓을 곳이 없어요!</h2>
+    <div class="s" id="finalScore">0</div>
+    <div class="b" id="finalBest">최고 기록 0</div>
+    <div id="newBest"></div>
+    <button id="again">다시 하기</button>
+  </div>
+</div>
+<script src="../../sdk/playground-sdk.js" data-game="block-pop"></script>
+<script>
+(() => {
+  'use strict';
+  const N = 8;
+  const INK = '#1A1033';
+  const COLORS = ['#FFD23F', '#FF5DA2', '#2EE6A6', '#4CC9F0', '#FF8C42', '#6C4CF5', '#B9A3FF'];
+  const SHAPES = [
+    [[[0,0]], .6],
+    [[[0,0],[0,1]], 1], [[[0,0],[1,0]], 1],
+    [[[0,0],[0,1],[0,2]], 1], [[[0,0],[1,0],[2,0]], 1],
+    [[[0,0],[0,1],[0,2],[0,3]], .9], [[[0,0],[1,0],[2,0],[3,0]], .9],
+    [[[0,0],[0,1],[0,2],[0,3],[0,4]], .55], [[[0,0],[1,0],[2,0],[3,0],[4,0]], .55],
+    [[[0,0],[0,1],[1,0],[1,1]], 1.2],
+    [[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]], .45],
+    [[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]], .6], [[[0,0],[0,1],[1,0],[1,1],[2,0],[2,1]], .6],
+    [[[0,0],[1,0],[1,1]], 1], [[[0,0],[0,1],[1,0]], 1], [[[0,0],[0,1],[1,1]], 1], [[[0,1],[1,0],[1,1]], 1],
+    [[[0,0],[1,0],[2,0],[2,1]], .7], [[[0,0],[0,1],[0,2],[1,0]], .7], [[[0,0],[0,1],[1,1],[2,1]], .7], [[[0,2],[1,0],[1,1],[1,2]], .7],
+    [[[0,1],[1,1],[2,1],[2,0]], .7], [[[0,0],[1,0],[1,1],[1,2]], .7], [[[0,0],[0,1],[1,0],[2,0]], .7], [[[0,0],[0,1],[0,2],[1,2]], .7],
+    [[[0,0],[0,1],[0,2],[1,1]], .7], [[[0,1],[1,0],[1,1],[2,1]], .7], [[[0,1],[1,0],[1,1],[1,2]], .7], [[[0,0],[1,0],[1,1],[2,0]], .7],
+    [[[0,1],[0,2],[1,0],[1,1]], .6], [[[0,0],[1,0],[1,1],[2,1]], .6], [[[0,0],[0,1],[1,1],[1,2]], .6], [[[0,1],[1,0],[1,1],[2,0]], .6],
+    [[[0,0],[1,0],[2,0],[2,1],[2,2]], .5], [[[0,0],[0,1],[0,2],[1,0],[2,0]], .5], [[[0,0],[0,1],[0,2],[1,2],[2,2]], .5], [[[0,2],[1,2],[2,2],[2,1],[2,0]], .5],
+  ];
+  const TOTAL_W = SHAPES.reduce((s, x) => s + x[1], 0);
+
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  let W = 0, H = 0, DPR = 1, L = {};
+
+  // ---------- 상태 ----------
+  let board, tray, score, best = 0, combo, miss, over = false, started = false;
+  let drag = null;           // { i, x, y, lift, gr, gc, ok, lines }
+  const fx = [];             // 이펙트 (지워지는 칸, 파편, 떠오르는 글자)
+  let shownScore = 0;
+
+  const empty = () => Array.from({ length: N }, () => Array(N).fill(0));
+  function randShape() {
+    let r = Math.random() * TOTAL_W;
+    for (const [cells, w] of SHAPES) { if ((r -= w) <= 0) return cells; }
+    return SHAPES[0][0];
+  }
+  const piece = () => ({ cells: randShape(), color: COLORS[Math.floor(Math.random() * COLORS.length)], used: false });
+  const size = cells => ({ r: Math.max(...cells.map(c => c[0])) + 1, c: Math.max(...cells.map(c => c[1])) + 1 });
+  function fits(b, cells, r0, c0) {
+    for (const [r, c] of cells) {
+      const rr = r0 + r, cc = c0 + c;
+      if (rr < 0 || cc < 0 || rr >= N || cc >= N || b[rr][cc]) return false;
+    }
+    return true;
+  }
+  function fitsAnywhere(b, cells) {
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (fits(b, cells, r, c)) return true;
+    return false;
+  }
+  function newTray() {
+    // 세 조각 중 최소 하나는 놓을 수 있게 (공정성)
+    for (let t = 0; t < 30; t++) {
+      const p = [piece(), piece(), piece()];
+      if (p.some(x => fitsAnywhere(board, x.cells))) return p;
+    }
+    return [ { cells: [[0,0]], color: COLORS[0], used: false }, piece(), piece() ];
+  }
+  function fullLines(b) {
+    const rows = [], cols = [];
+    for (let i = 0; i < N; i++) {
+      if (b[i].every(Boolean)) rows.push(i);
+      if (b.every(row => row[i])) cols.push(i);
+    }
+    return { rows, cols };
+  }
+
+  function newGame() {
+    board = empty(); score = 0; shownScore = 0; combo = 0; miss = 0; over = false; started = false;
+    tray = newTray();
+    document.getElementById('over').classList.remove('on');
+    persist();
+    PG.score(0);
+  }
+  function persist() {
+    PG.save(over ? { best } : { board, tray, score, best, combo, miss });
+  }
+
+  // ---------- 소리 ----------
+  let ac = null, muted = false;
+  function beep(freq, dur = .08, type = 'square', vol = .05) {
+    if (muted) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + dur);
+      o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + dur);
+    } catch (e) {}
+  }
+  const soundBtn = document.getElementById('sound');
+  const drawSoundIcon = () => {
+    soundBtn.innerHTML = muted
+      ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5"/></svg>'
+      : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>';
+    soundBtn.setAttribute('aria-label', muted ? '소리 켜기' : '소리 끄기');
+  };
+  soundBtn.addEventListener('click', () => { muted = !muted; drawSoundIcon(); });
+  drawSoundIcon();
+
+  // ---------- 화면 배치 ----------
+  function layout() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const top = Math.max(96, H * .16);
+    const bs = Math.min(W * .92, (H - top) / 1.5, 560);
+    const cell = bs / N;
+    const trayH = Math.max(bs * .38, 110);
+    const total = top + bs + 22 + trayH;
+    const y0 = Math.max(0, (H - total) / 2);
+    L = { top: y0 + top, bx: (W - bs) / 2, by: y0 + top, bs, cell, trayY: y0 + top + bs + 22, trayH, scoreY: y0 + top * .52 };
+  }
+
+  // ---------- 그리기 ----------
+  function rr(x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function block(x, y, s, color, alpha = 1) {
+    const pad = Math.max(1, s * .05);
+    ctx.globalAlpha = alpha;
+    rr(x + pad, y + pad, s - pad * 2, s - pad * 2, s * .2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.lineWidth = Math.max(1.5, s * .07); ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.45)';
+    rr(x + s * .2, y + s * .17, s * .32, s * .14, s * .07); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  function drawBg() {
+    ctx.fillStyle = '#1A1033'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,.06)';
+    for (let y = 9; y < H; y += 18) for (let x = 9; x < W; x += 18) { ctx.beginPath(); ctx.arc(x, y, 1.4, 0, 7); ctx.fill(); }
+  }
+  function drawScore() {
+    shownScore += (score - shownScore) * .2;
+    if (Math.abs(score - shownScore) < .5) shownScore = score;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#B9A3FF'; ctx.font = `${Math.round(Math.min(15, W * .04))}px Jua, sans-serif`;
+    ctx.fillText(`최고 ${best.toLocaleString('ko-KR')}`, W / 2, L.scoreY - Math.min(40, H * .055));
+    ctx.fillStyle = '#FFD23F'; ctx.font = `${Math.round(Math.min(56, W * .13))}px Jua, sans-serif`;
+    ctx.fillText(Math.round(shownScore).toLocaleString('ko-KR'), W / 2, L.scoreY + 4);
+    if (combo >= 2) {
+      const t = `${combo} 콤보!`;
+      ctx.font = `${Math.round(Math.min(18, W * .045))}px Jua, sans-serif`;
+      const w = ctx.measureText(t).width + 26, y = L.scoreY + Math.min(40, H * .055);
+      ctx.save(); ctx.translate(W / 2, y); ctx.rotate(-.06);
+      rr(-w / 2, -14, w, 28, 10); ctx.fillStyle = '#2EE6A6'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.fillStyle = INK; ctx.fillText(t, 0, 1); ctx.restore();
+    }
+  }
+  function drawBoard() {
+    const { bx, by, bs, cell } = L;
+    rr(bx - 8, by - 8, bs + 16, bs + 16, 18); ctx.fillStyle = '#2A1F55'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.stroke();
+    // 미리보기: 놓으면 지워질 줄
+    const hl = new Set();
+    if (drag?.ok) { drag.lines.rows.forEach(r => { for (let c = 0; c < N; c++) hl.add(r * N + c); }); drag.lines.cols.forEach(c => { for (let r = 0; r < N; r++) hl.add(r * N + c); }); }
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const x = bx + c * cell, y = by + r * cell, v = board[r][c];
+      if (v) block(x, y, cell, hl.has(r * N + c) ? drag.color : v);
+      else { rr(x + cell * .06, y + cell * .06, cell * .88, cell * .88, cell * .18); ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fill(); }
+    }
+    if (drag?.ok) {
+      const p = tray[drag.i];
+      for (const [r, c] of p.cells) block(bx + (drag.gc + c) * cell, by + (drag.gr + r) * cell, cell, p.color, .45);
+      hl.forEach(k => { const r = Math.floor(k / N), c = k % N; if (!board[r][c]) block(bx + c * cell, by + r * cell, cell, drag.color, .25); });
+    }
+  }
+  function slotRect(i) { const w = L.bs / 3; return { x: L.bx + i * w, y: L.trayY, w, h: L.trayH }; }
+  function drawTray() {
+    for (let i = 0; i < 3; i++) {
+      const p = tray[i];
+      if (!p || p.used || (drag && drag.i === i)) continue;
+      const s = slotRect(i), sz = size(p.cells);
+      const mini = Math.min(L.cell * .55, (s.w - 16) / Math.max(sz.c, 3), (s.h - 16) / Math.max(sz.r, 3));
+      const ox = s.x + (s.w - sz.c * mini) / 2, oy = s.y + (s.h - sz.r * mini) / 2;
+      const can = fitsAnywhere(board, p.cells);
+      for (const [r, c] of p.cells) block(ox + c * mini, oy + r * mini, mini, can ? p.color : '#5A4F7A');
+    }
+    if (drag) {
+      const p = tray[drag.i];
+      const { x, y } = dragOrigin();
+      for (const [r, c] of p.cells) block(x + c * L.cell, y + r * L.cell, L.cell, p.color, .95);
+    }
+  }
+  function drawFx(now) {
+    for (let i = fx.length - 1; i >= 0; i--) {
+      const f = fx[i], k = (now - f.t0) / f.dur;
+      if (k >= 1) { fx.splice(i, 1); continue; }
+      if (f.kind === 'clear') {
+        const s = L.cell * (1 - k * .9);
+        block(L.bx + f.c * L.cell + (L.cell - s) / 2, L.by + f.r * L.cell + (L.cell - s) / 2, s, f.color, 1 - k * .3);
+      } else if (f.kind === 'bit') {
+        f.x += f.vx; f.y += f.vy; f.vy += .35;
+        ctx.globalAlpha = 1 - k; ctx.fillStyle = f.color; ctx.fillRect(f.x, f.y, f.s, f.s); ctx.globalAlpha = 1;
+      } else if (f.kind === 'pop') {
+        const s = L.cell * (1 + .18 * Math.sin(k * Math.PI));
+        block(L.bx + f.c * L.cell + (L.cell - s) / 2, L.by + f.r * L.cell + (L.cell - s) / 2, s, f.color);
+      } else if (f.kind === 'text') {
+        ctx.save(); ctx.globalAlpha = 1 - k * k;
+        ctx.translate(f.x, f.y - k * 50); ctx.rotate(f.rot);
+        ctx.font = `${f.size}px Jua, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.strokeText(f.text, 0, 0);
+        ctx.fillStyle = f.color; ctx.fillText(f.text, 0, 0); ctx.restore();
+      }
+    }
+  }
+  function frame(now) {
+    drawBg(); drawScore(); drawBoard(); drawFx(now); drawTray();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- 드래그 ----------
+  function dragOrigin() {
+    const p = tray[drag.i], sz = size(p.cells);
+    return { x: drag.x - (sz.c * L.cell) / 2, y: drag.y - sz.r * L.cell - drag.lift };
+  }
+  function updateSnap() {
+    const p = tray[drag.i];
+    const o = dragOrigin();
+    const gc = Math.round((o.x - L.bx) / L.cell), gr = Math.round((o.y - L.by) / L.cell);
+    drag.gr = gr; drag.gc = gc; drag.color = p.color;
+    drag.ok = fits(board, p.cells, gr, gc);
+    if (drag.ok) {
+      const b = board.map(row => row.slice());
+      for (const [r, c] of p.cells) b[gr + r][gc + c] = p.color;
+      drag.lines = fullLines(b);
+    }
+  }
+  const pos = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  cv.addEventListener('pointerdown', e => {
+    if (over) return;
+    const { x, y } = pos(e);
+    for (let i = 0; i < 3; i++) {
+      const s = slotRect(i);
+      if (tray[i] && !tray[i].used && x >= s.x && x <= s.x + s.w && y >= s.y - 10 && y <= s.y + s.h + 30) {
+        drag = { i, x, y, lift: e.pointerType === 'mouse' ? -size(tray[i].cells).r * L.cell / 2 : L.cell * 1.2, ok: false };
+        cv.setPointerCapture(e.pointerId);
+        updateSnap(); beep(520, .04, 'triangle', .04);
+        return;
+      }
+    }
+  });
+  cv.addEventListener('pointermove', e => { if (!drag) return; const p = pos(e); drag.x = p.x; drag.y = p.y; updateSnap(); });
+  const endDrag = () => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (d.ok) place(d.i, d.gr, d.gc);
+  };
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointercancel', () => { drag = null; });
+
+  // ---------- 놓기 · 줄 지우기 ----------
+  function place(i, gr, gc) {
+    const p = tray[i];
+    if (!started) { started = true; PG.gameStart(); }
+    const now = performance.now();
+    for (const [r, c] of p.cells) { board[gr + r][gc + c] = p.color; fx.push({ kind: 'pop', r: gr + r, c: gc + c, color: p.color, t0: now, dur: 180 }); }
+    p.used = true;
+    score += p.cells.length;
+    beep(330, .06, 'triangle', .06);
+
+    const { rows, cols } = fullLines(board);
+    const n = rows.length + cols.length;
+    if (n) {
+      combo += 1; miss = 0;
+      const gained = 10 * n * (n + 1) / 2 * Math.max(1, combo);
+      score += gained;
+      const cleared = new Set();
+      rows.forEach(r => { for (let c = 0; c < N; c++) cleared.add(r * N + c); });
+      cols.forEach(c => { for (let r = 0; r < N; r++) cleared.add(r * N + c); });
+      cleared.forEach(k => {
+        const r = Math.floor(k / N), c = k % N, color = board[r][c] || p.color;
+        fx.push({ kind: 'clear', r, c, color, t0: now, dur: 260 });
+        for (let j = 0; j < 3; j++) fx.push({ kind: 'bit', x: L.bx + (c + .5) * L.cell, y: L.by + (r + .5) * L.cell, vx: (Math.random() - .5) * 7, vy: -Math.random() * 6 - 1, s: L.cell * .18, color, t0: now, dur: 700 });
+        board[r][c] = 0;
+      });
+      const label = n >= 4 ? '대박!' : n === 3 ? '트리플!' : n === 2 ? '더블!' : '팡!';
+      fx.push({ kind: 'text', text: label, x: W / 2, y: L.by + L.bs * .45, size: Math.round(L.cell * .9), color: '#FFD23F', rot: -.08, t0: now, dur: 900 });
+      fx.push({ kind: 'text', text: `+${gained}`, x: W / 2, y: L.by + L.bs * .58, size: Math.round(L.cell * .55), color: '#2EE6A6', rot: .05, t0: now, dur: 900 });
+      if (board.every(row => row.every(v => !v))) {
+        score += 300;
+        fx.push({ kind: 'text', text: '퍼펙트! +300', x: W / 2, y: L.by + L.bs * .3, size: Math.round(L.cell * .7), color: '#FF5DA2', rot: .04, t0: now, dur: 1300 });
+      }
+      [523, 659, 784, 1047].slice(0, Math.min(4, n + 1)).forEach((f, j) => setTimeout(() => beep(f, .1, 'square', .05), j * 60));
+      PG.vibrate(n > 1 ? [20, 30, 20] : 20);
+    } else if (++miss >= 3) { combo = 0; }
+
+    if (tray.every(t => t.used)) tray = newTray();
+    if (score > best) best = score;
+    PG.score(score);
+
+    if (!tray.some(t => !t.used && fitsAnywhere(board, t.cells))) gameOver();
+    else persist();
+  }
+
+  function gameOver() {
+    over = true; started = false;
+    const isNew = score > 0 && score >= best;
+    persist();
+    PG.gameOver(score);
+    beep(220, .25, 'sawtooth', .05);
+    setTimeout(() => {
+      document.getElementById('finalScore').textContent = score.toLocaleString('ko-KR');
+      document.getElementById('finalBest').textContent = `최고 기록 ${best.toLocaleString('ko-KR')}`;
+      document.getElementById('newBest').innerHTML = isNew ? '<span class="new">최고 기록 달성!</span>' : '';
+      document.getElementById('over').classList.add('on');
+      document.getElementById('again').focus();
+    }, 650);
+  }
+  document.getElementById('again').addEventListener('click', newGame);
+
+  function say(text) {
+    const m = document.getElementById('msg');
+    m.textContent = text; m.classList.add('on');
+    setTimeout(() => m.classList.remove('on'), 1600);
+  }
+
+  // ---------- 시작 ----------
+  window.addEventListener('resize', layout);
+  layout();
+  board = empty(); tray = newTray(); score = 0; combo = 0; miss = 0;
+  requestAnimationFrame(frame);
+  PG.load().then(save => {
+    if (save && typeof save.best === 'number') best = save.best;
+    if (save && Array.isArray(save.board) && save.board.length === N && Array.isArray(save.tray)) {
+      board = save.board; tray = save.tray; score = save.score || 0; shownScore = score; combo = save.combo || 0; miss = save.miss || 0;
+      if (tray.every(t => t.used)) tray = newTray();
+      if (!tray.some(t => !t.used && fitsAnywhere(board, t.cells))) newGame();
+      else say('이어하기!');
+    } else newGame();
+    PG.score(score);
+    PG.ready();
+  });
+})();
+</script>
+</body>
+</html>

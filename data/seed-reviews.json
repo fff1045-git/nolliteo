@@ -1,0 +1,180 @@
+[
+ {
+  "id": "s1",
+  "slug": "block-pop",
+  "user": "팡팡장인",
+  "color": "#FFD23F",
+  "rec": true,
+  "playSec": 50400,
+  "helpful": 128,
+  "date": "2026-10-02",
+  "text": "출근길 지하철에서 딱 한 판씩 하기 좋아요. 두 줄 동시에 터질 때 손맛이 미쳤습니다. 조각이 안 맞을 땐 판 가장자리부터 채우세요!",
+  "devReply": "꿀팁 감사합니다! 다음 업데이트에 콤보 효과를 더 화려하게 바꿀게요."
+ },
+ {
+  "id": "s2",
+  "slug": "block-pop",
+  "user": "민트초코",
+  "color": "#2EE6A6",
+  "rec": true,
+  "playSec": 9000,
+  "helpful": 41,
+  "date": "2026-10-05",
+  "text": "친구랑 점수 내기 하다가 새벽 2시 됨… 판이 꽉 차기 직전 긴장감이 좋아요."
+ },
+ {
+  "id": "s3",
+  "slug": "block-pop",
+  "user": "블럭맨",
+  "color": "#4CC9F0",
+  "rec": false,
+  "playSec": 2700,
+  "helpful": 12,
+  "date": "2026-10-07",
+  "text": "재밌는데 3×3 큰 조각이 연속으로 나오면 너무 억울해요. 조각 확률 조정 부탁드려요."
+ },
+ {
+  "id": "s4",
+  "slug": "block-pop",
+  "user": "하루한판",
+  "color": "#FF5DA2",
+  "rec": true,
+  "playSec": 21600,
+  "helpful": 27,
+  "date": "2026-10-08",
+  "text": "이어하기가 돼서 좋아요. 앱 깔 필요 없이 홈 화면에 추가해 두고 씁니다."
+ },
+ {
+  "id": "s5",
+  "slug": "2048",
+  "user": "숫자요정",
+  "color": "#B9A3FF",
+  "rec": true,
+  "playSec": 36000,
+  "helpful": 96,
+  "date": "2026-10-01",
+  "text": "큰 숫자는 한쪽 구석에 몰아두는 게 국룰. 스와이프 반응이 빨라서 앱 같아요.",
+  "devReply": "구석 전략 정답입니다 :) 즐겨 주셔서 감사해요!"
+ },
+ {
+  "id": "s6",
+  "slug": "2048",
+  "user": "자기전10분",
+  "color": "#FF8C42",
+  "rec": true,
+  "playSec": 7200,
+  "helpful": 33,
+  "date": "2026-10-04",
+  "text": "자기 전에 머리 식히기 딱. 나갔다 와도 판이 그대로 남아 있어서 좋네요."
+ },
+ {
+  "id": "s7",
+  "slug": "2048",
+  "user": "빠른손",
+  "color": "#4CC9F0",
+  "rec": false,
+  "playSec": 1800,
+  "helpful": 8,
+  "date": "2026-10-06",
+  "text": "되돌리기 기능이 있으면 좋겠어요. 한 번 실수하면 회복이 어렵네요."
+ },
+ {
+  "id": "s7b",
+  "slug": "2048",
+  "user": "머지중독",
+  "color": "#2EE6A6",
+  "rec": true,
+  "playSec": 14400,
+  "helpful": 19,
+  "date": "2026-10-08",
+  "text": "타일 합쳐질 때 통통 튀는 느낌이 좋아요. 1024 만들었을 때 손 떨렸음."
+ },
+ {
+  "id": "s8",
+  "slug": "moon-garden",
+  "user": "정원사밍",
+  "color": "#2EE6A6",
+  "rec": true,
+  "playSec": 50400,
+  "helpful": 77,
+  "date": "2026-09-28",
+  "text": "사전 체험판 해봤는데 자기 전 10분씩 하기 딱 좋아요. 60스테이지부터 난이도가 확 올라가니 힌트 아껴두세요!"
+ },
+ {
+  "id": "s9",
+  "slug": "moon-garden",
+  "user": "달토끼팬",
+  "color": "#FFD23F",
+  "rec": true,
+  "playSec": 6000,
+  "helpful": 14,
+  "date": "2026-09-30",
+  "text": "그림체가 너무 예뻐요. 정식 출시 기다립니다."
+ },
+ {
+  "id": "s10",
+  "slug": "endless-jump",
+  "user": "점프킹",
+  "color": "#FF5DA2",
+  "rec": true,
+  "playSec": 4200,
+  "helpful": 21,
+  "date": "2026-10-03",
+  "text": "단순한데 계속 한 판 더 하게 돼요. 타이밍 게임 좋아하면 강추."
+ },
+ {
+  "id": "s11",
+  "slug": "endless-jump",
+  "user": "계단공포증",
+  "color": "#4CC9F0",
+  "rec": false,
+  "playSec": 900,
+  "helpful": 3,
+  "date": "2026-10-05",
+  "text": "속도가 너무 빨리 올라가요. 초반이 좀 더 길었으면."
+ },
+ {
+  "id": "s12",
+  "slug": "cat-diner",
+  "user": "집사3년차",
+  "color": "#FF8C42",
+  "rec": true,
+  "playSec": 12000,
+  "helpful": 44,
+  "date": "2026-09-27",
+  "text": "고양이 손님들 표정이 다 달라서 귀여워 죽어요. 방치형이라 부담 없음."
+ },
+ {
+  "id": "s13",
+  "slug": "cat-diner",
+  "user": "요리왕",
+  "color": "#B9A3FF",
+  "rec": true,
+  "playSec": 3000,
+  "helpful": 9,
+  "date": "2026-10-02",
+  "text": "메뉴 해금되는 맛이 있네요."
+ },
+ {
+  "id": "s14",
+  "slug": "star-link",
+  "user": "별헤는밤",
+  "color": "#FFD23F",
+  "rec": true,
+  "playSec": 5400,
+  "helpful": 18,
+  "date": "2026-10-06",
+  "text": "한 붓 그리기 퍼즐인데 친구 랭킹이 있어서 은근 경쟁하게 돼요."
+ },
+ {
+  "id": "s15",
+  "slug": "star-link",
+  "user": "퍼즐러",
+  "color": "#2EE6A6",
+  "rec": false,
+  "playSec": 1200,
+  "helpful": 5,
+  "date": "2026-10-07",
+  "text": "후반 스테이지 설명이 부족해요. 튜토리얼 보강 필요."
+ }
+]
