@@ -20,9 +20,23 @@ const blank = () => ({
   friends: [],                        // [{ id, at }] 내가 추가한 친구
   playedWith: {},                     // id → { slug, at, count } 같이 플레이한 기록
   myCode: null,                       // 내 친구 코드 (NOL-XXXX)
+  hearts: { n: 5, at: Date.now() },   // 하트 개수, 마지막 충전 기준 시각
+  heartInbox: [],                     // [{ id, from, at }] 친구가 보낸 하트
+  heartSent: {},                      // 친구 id → 마지막으로 하트 보낸 시각
+  heartGift: {},                      // 친구 id → 마지막으로 나에게 하트 보낸 시각 (연습용 흉내)
+  records: {},                        // slug → { best, plays, last, at } 친구 경쟁용 내 기록
+  activeRound: {},                    // slug → true  하트를 쓰고 진행 중인 판 (이어하기는 하트 안 씀)
+  home: null,                         // 마이홈: { avatar, mood, room, items:[{ key, x, y, flip }], ax, ay }
+  guestbook: {},                      // 홈 주인 id → [{ from, text, at }]
+  visits: {},                         // 홈 주인 id → 방문 수
+  seeded: false,                      // 기본 친구(민지·하준) 넣었는지
 });
 
 let S = load();
+if (!S.seeded) {   // 처음 한 번: 채팅에 나오는 민지·하준을 기본 친구로
+  S.seeded = true;
+  for (const id of ['hajun', 'minji']) if (!S.friends.some(f => f.id === id)) S.friends.unshift({ id, at: Date.now() });
+}
 
 function load() {
   try {
@@ -189,6 +203,99 @@ export function myCode() {
   }
   return S.myCode;
 }
+
+// ---------- 하트 (카카오 게임식) ----------
+// 한 판 시작할 때 1개 사용. 5개보다 적으면 5분마다 1개씩 다시 찬다. 친구가 보낸 하트는 5개를 넘어도 된다.
+export const HEART_MAX = 5, HEART_REGEN = 5 * 60 * 1000, HEART_SEND_GAP = 10 * 60 * 1000;
+function regen() {
+  const h = S.hearts, now = Date.now();
+  if (h.n >= HEART_MAX) { h.at = now; return false; }
+  const k = Math.floor((now - h.at) / HEART_REGEN);
+  if (k <= 0) return false;
+  h.n = Math.min(HEART_MAX, h.n + k);
+  h.at = h.n >= HEART_MAX ? now : h.at + k * HEART_REGEN;
+  return true;
+}
+/** { n, max, nextIn(ms, 가득이면 0), inbox } */
+export function hearts() {
+  if (regen()) persist();
+  const h = S.hearts;
+  return { n: h.n, max: HEART_MAX, nextIn: h.n >= HEART_MAX ? 0 : Math.max(0, HEART_REGEN - (Date.now() - h.at)), inbox: S.heartInbox.length };
+}
+export function useHeart() {
+  regen();
+  if (S.hearts.n <= 0) { persist(); return false; }
+  if (S.hearts.n >= HEART_MAX) S.hearts.at = Date.now();   // 가득 찬 상태에서 쓰면 그때부터 충전 시작
+  S.hearts.n -= 1;
+  persist();
+  return true;
+}
+export function heartInbox() { return [...S.heartInbox]; }
+export function acceptHeart(id) {
+  const i = S.heartInbox.findIndex(x => x.id === id);
+  if (i < 0) return 0;
+  S.heartInbox.splice(i, 1); S.hearts.n += 1;
+  persist(); return 1;
+}
+export function acceptAllHearts() {
+  const k = S.heartInbox.length;
+  S.hearts.n += k; S.heartInbox = [];
+  persist(); return k;
+}
+/** 친구에게 하트 보내기 — 친구마다 10분에 1번 */
+export function canSendHeart(id) { return Date.now() - (S.heartSent[id] || 0) >= HEART_SEND_GAP; }
+export function sendHeartWait(id) { return Math.max(0, HEART_SEND_GAP - (Date.now() - (S.heartSent[id] || 0))); }
+export function sendHeart(id) {
+  if (!canSendHeart(id)) return false;
+  S.heartSent[id] = Date.now();
+  persist(); return true;
+}
+/** 연습용: 친구들이 가끔 나에게 하트를 보낸다 (내가 보낸 친구일수록 잘 보내 줌) */
+export function simulateFriendGifts() {
+  const now = Date.now();
+  let added = 0;
+  for (const f of S.friends) {
+    const last = S.heartGift[f.id] || 0;
+    if (now - last < 20 * 60 * 1000) continue;
+    const p = S.heartSent[f.id] && now - S.heartSent[f.id] < 60 * 60 * 1000 ? .9 : .45;
+    S.heartGift[f.id] = now;
+    if (Math.random() < p && S.heartInbox.length < 20) { S.heartInbox.push({ id: f.id + '-' + now, from: f.id, at: now - Math.floor(Math.random() * 15 * 60000) }); added++; }
+  }
+  if (added || S.friends.length) persist();
+  return added;
+}
+/** 판 시작: 이어하던 판이면 하트를 쓰지 않는다. 하트가 없으면 false */
+export function startRound(slug) {
+  if (S.activeRound[slug]) return true;
+  if (!useHeart()) return false;
+  S.activeRound[slug] = true;
+  const r = (S.records[slug] ??= { best: 0, plays: 0, last: 0, at: 0 });
+  r.plays += 1;
+  persist(); return true;
+}
+
+// ---------- 친구 경쟁용 내 기록 ----------
+/** 판이 끝났을 때. { best, prevBest, isBest } */
+export function finishRound(slug, score) {
+  delete S.activeRound[slug];
+  const r = (S.records[slug] ??= { best: 0, plays: 0, last: 0, at: 0 });
+  const prevBest = r.best;
+  r.last = score; r.at = Date.now();
+  if (score > r.best) r.best = score;
+  persist();
+  return { best: r.best, prevBest, isBest: score > prevBest };
+}
+export function record(slug) { return S.records[slug] || { best: 0, plays: 0, last: 0, at: 0 }; }
+
+// ---------- 마이홈 ----------
+export function myHome() { return S.home; }
+export function saveHome(home) { S.home = home; persist(); }
+export function guestbook(owner) { return [...(S.guestbook[owner] || [])]; }
+export function writeGuestbook(owner, text) {
+  (S.guestbook[owner] ??= []).unshift({ from: 'me', text: String(text).slice(0, 200), at: Date.now() });
+  persist();
+}
+export function visit(owner) { S.visits[owner] = (S.visits[owner] || 0) + 1; persist(); return S.visits[owner]; }
 
 // ---------- 전체 초기화 (내 게임 화면) ----------
 export function resetAll() { S = blank(); persist(); }

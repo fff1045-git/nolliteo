@@ -3,6 +3,7 @@ import { getGame, asset, esc, stats, reviewsFor, fmtTime } from '../data.js';
 import * as store from '../store.js';
 import { icon } from '../icons.js';
 import { playAction, addToHomeSheet, shareGame, goBack, toast, soonSheet } from '../ui.js';
+import { friendRankHtml } from '../compete-ui.js';
 
 export function reviewCard(r, best = false) {
   const on = store.isHelpful(r.id);
@@ -59,6 +60,7 @@ export function render(view, slug) {
       </section>
 
       <div class="reviews-col pad-m">
+        ${soon ? '' : friendRankHtml(slug)}
         <div class="sec-head"><h2>플레이어 리뷰</h2><span class="sub" style="color:#0FA678;font-weight:700">${esc(s.label)}</span><span class="sub">· ${s.total}개</span></div>
         ${s.total ? `<div class="rec-bar" role="img" aria-label="추천 ${s.rec}개, 비추천 ${s.total - s.rec}개"><i class="y" style="width:${s.rate}%"></i><i class="n" style="flex:1"></i></div>
         <div class="rec-legend"><span>추천 ${s.rec}</span><span>비추천 ${s.total - s.rec}</span></div>` : ''}
@@ -90,6 +92,8 @@ export function render(view, slug) {
       window.scrollTo(0, y);
     }
   };
+  const onHearts = () => { const y = window.scrollY; draw(); window.scrollTo(0, y); };
   view.addEventListener('click', onClick);
-  return () => view.removeEventListener('click', onClick);
+  window.addEventListener('hearts-changed', onHearts);
+  return () => { view.removeEventListener('click', onClick); window.removeEventListener('hearts-changed', onHearts); };
 }

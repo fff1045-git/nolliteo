@@ -3,6 +3,7 @@
 import { allPeople, getPerson, getGame, esc, asset } from '../data.js';
 import * as store from '../store.js';
 import { icon } from '../icons.js';
+import { sendHeartBtn } from '../hearts-ui.js';
 import { toast, sheet, copyText, playAction } from '../ui.js';
 
 const ago = ms => {
@@ -41,8 +42,8 @@ function recommended() {
 function row(p, sub, actions) {
   const on = p.status?.online;
   return `<div class="friend-row">
-    <span class="avatar lg" style="background:${p.color}">${esc(p.name[0])}${on ? '<i class="online" aria-label="접속 중"></i>' : ''}</span>
-    <div class="fi"><b>${esc(p.name)}</b><small>${sub}</small></div>
+    <a class="avatar lg" href="#/minihome/${p.id}" aria-label="${esc(p.name)} 미니홈피" style="background:${p.color}">${esc(p.name[0])}${on ? '<i class="online" aria-label="접속 중"></i>' : ''}</a>
+    <a class="fi" href="#/minihome/${p.id}"><b>${esc(p.name)} <span class="hp-link">홈피 ›</span></b><small>${sub}</small></a>
     <div class="fa">${actions}</div>
   </div>`;
 }
@@ -66,7 +67,7 @@ export function render(view) {
       <div class="sec-head"><h2>내 친구</h2><span class="sub">${friends.length}명 · 접속 중 ${friends.filter(p => p.status?.online).length}명</span></div>
       ${friends.length ? `<div class="card friend-list">${friends.map(p => {
         const g = p.status?.online && getGame(p.status.playing);
-        return row(p, esc(statusText(p)), `${g && g.status === 'live' ? `<button class="btn btn-sm btn-yellow" data-join="${g.slug}">같이 하기</button>` : ''}<button class="icon-btn sm" data-remove="${p.id}" aria-label="${esc(p.name)} 친구 삭제">${icon('x', 16)}</button>`);
+        return row(p, esc(statusText(p)), `${g && g.status === 'live' ? `<button class="btn btn-sm btn-yellow" data-join="${g.slug}">같이 하기</button>` : ''}${sendHeartBtn(p.id)}<button class="icon-btn sm" data-remove="${p.id}" aria-label="${esc(p.name)} 친구 삭제">${icon('x', 16)}</button>`);
       }).join('')}</div>`
         : `<div class="empty">아직 친구가 없어요. 아래 추천 친구를 추가하거나<br>닉네임·친구 코드로 찾아보세요.</div>`}
 
@@ -131,8 +132,10 @@ export function render(view) {
   };
   const onInput = e => { if (e.target.id === 'fq') { query = e.target.value; draw(); } };
   const onSubmit = e => { if (e.target.matches('[data-search]')) e.preventDefault(); };
+  const onHearts = () => draw();
+  window.addEventListener('hearts-changed', onHearts);
   view.addEventListener('click', onClick);
   view.addEventListener('input', onInput);
   view.addEventListener('submit', onSubmit);
-  return () => { view.removeEventListener('click', onClick); view.removeEventListener('input', onInput); view.removeEventListener('submit', onSubmit); };
+  return () => { window.removeEventListener('hearts-changed', onHearts); view.removeEventListener('click', onClick); view.removeEventListener('input', onInput); view.removeEventListener('submit', onSubmit); };
 }

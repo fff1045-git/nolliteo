@@ -120,7 +120,11 @@
     }, 700);
   }
 
+  let paused = false;
+  PG.onPause(() => { paused = true; });
+  PG.onResume(() => { paused = false; last = performance.now(); });
   function update(dt) {
+    if (paused) return;
     if (state === 'ready') { bird.y = H * .45 + Math.sin(performance.now() / 260) * H * .012; scroll += SPEED * U * dt * .6; return; }
     bird.vy += G * U * dt;
     bird.y += bird.vy * dt;

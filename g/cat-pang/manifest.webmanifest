@@ -1,0 +1,33 @@
+{
+  "id": "./?game=cat-pang",
+  "name": "캣팡 — 놀이터",
+  "short_name": "캣팡",
+  "description": "고양이를 옆 칸으로 밀어 같은 고양이 3마리를 맞추면 팡! 빠르게 이어 맞추면 콤보, 콤보 10번이면 피버 타임(점수 2배). 4마리 이상 맞추면 십자 폭탄 고양이가 생겨요. 60초 승부.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#1A1033",
+  "theme_color": "#1A1033",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "../../assets/icons/cat-pang-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../../assets/icons/cat-pang-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../../assets/icons/cat-pang-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

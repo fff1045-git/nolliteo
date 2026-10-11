@@ -1,5 +1,6 @@
 // 랭킹 · 카테고리 · 검색
-import { allGames, CATEGORIES, esc } from '../data.js';
+import { allGames, CATEGORIES, esc, asset } from '../data.js';
+import { friendRankHtml } from '../compete-ui.js';
 import { icon } from '../icons.js';
 import { gameCard, goBack } from '../ui.js';
 import { rankRows, onPlayClick } from './home.js';
@@ -19,10 +20,23 @@ function bind(view, extra) {
 }
 
 export function ranking(view) {
-  view.innerHTML = `${head('실시간 랭킹')}
-  <div class="page pad"><div class="sec-head"><h2>지금 인기</h2><span class="badge badge-pink">LIVE</span><span class="sub">플레이 수·추천률 기준 (연습용 예시)</span></div>
-  <div class="card" style="padding:8px 16px"><div class="rank-list">${rankRows(allGames())}</div></div></div>`;
-  return bind(view);
+  const live = allGames().filter(g => g.status === 'live');
+  let pick = live[0]?.slug;
+  const draw = () => {
+    view.innerHTML = `${head('랭킹')}
+    <div class="page pad">
+      <div class="sec-head"><h2>친구 랭킹</h2><span class="sub">게임마다 이번 주 최고 기록</span></div>
+      <div class="game-chips" role="tablist">${live.map(g => `<button class="chip-tab ${g.slug === pick ? 'on' : ''}" role="tab" aria-selected="${g.slug === pick}" data-pick="${g.slug}"><img src="${asset(g.image)}" alt="" width="26" height="26">${esc(g.name)}</button>`).join('')}</div>
+      ${friendRankHtml(pick, { title: false })}
+      <div class="sec-head"><h2>지금 인기</h2><span class="badge badge-pink">LIVE</span><span class="sub">플레이 수·추천률 기준 (연습용 예시)</span></div>
+      <div class="card" style="padding:8px 16px"><div class="rank-list">${rankRows(allGames())}</div></div>
+    </div>`;
+  };
+  draw();
+  const off = bind(view, e => { const b = e.target.closest('[data-pick]'); if (b) { pick = b.dataset.pick; draw(); } });
+  const onHearts = () => draw();
+  window.addEventListener('hearts-changed', onHearts);
+  return () => { off(); window.removeEventListener('hearts-changed', onHearts); };
 }
 
 export function category(view, id) {

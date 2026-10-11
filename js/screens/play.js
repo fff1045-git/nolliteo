@@ -9,6 +9,8 @@ import { createHost } from '../host.js';
 import { icon } from '../icons.js';
 import { toast, goBack, copyText, soonSheet } from '../ui.js';
 import { connectAiFriends } from '../ai-friends.js';
+import { ranking, nextTarget, myRank, scoreUnit } from '../compete.js';
+import { heartIcon, mmss, openHeartSheet } from '../hearts-ui.js';
 
 const FRIENDS = { 민지: '#4CC9F0', 하준: '#FFD23F', 나: '#FF5DA2' };
 const SCRIPT = [
@@ -45,10 +47,13 @@ export function render(view, slug) {
         <button class="icon-btn" style="background:var(--yellow)" data-invite aria-label="친구 초대">${icon('userPlus', 22)}</button>
       </div>
       <p class="practice-note m">연습용 — 실제 연결 없음</p>
+      <div class="compete-bar" data-compete></div>
       <div class="stage">
         <div class="frame">
           <iframe sandbox="allow-scripts" src="${asset(g.path)}" title="${esc(g.name)}" allow="autoplay"></iframe>
           <div class="stickers"></div>
+          <div class="gate" data-gate hidden></div>
+          <div class="result-card" data-result hidden></div>
         </div>
       </div>
       <div class="play-bottom"><div class="bubbles" aria-live="polite"></div>${reacts}${chatRow(true)}</div>
@@ -57,6 +62,7 @@ export function render(view, slug) {
       ${voice}
       <p class="practice-note">연습용 — 실제 연결 없음</p>
       <div class="now"><span><b style="font-family:var(--font-title);font-weight:400;font-size:18px">${esc(g.name)}</b><br><small style="opacity:.7">현재 점수</small></span><span class="play-score" data-score>0</span></div>
+      <div class="side-rank card" data-siderank></div>
       <button class="btn btn-yellow" data-invite>${icon('userPlus', 20)}친구 초대 링크 복사</button>
       <div class="log-box" aria-live="polite"></div>
       ${reacts}
@@ -143,14 +149,79 @@ export function render(view, slug) {
     later(() => s.remove(), 1500);
   };
 
+  // ---- 하트 · 친구 경쟁 ----
+  const unit = scoreUnit(slug);
+  const fmt = n => `${Number(n).toLocaleString('ko-KR')}${unit}`;
+  let target = null, gateTimer = 0, resultTimer = 0;
+  const drawCompete = () => {
+    const h = store.hearts();
+    target = nextTarget(slug, score);
+    const { rank, total } = myRank(slug, score);
+    root.querySelector('[data-compete]').innerHTML = `
+      <button class="cp-heart" data-hearts aria-label="하트 ${h.n}개">${heartIcon(true, 15)}<b data-heart-n>${h.n}</b><small data-heart-timer>${h.n >= h.max ? '가득' : mmss(h.nextIn)}</small></button>
+      <span class="cp-target">${target ? `다음 추월 <b>${esc(target.name)}</b> ${fmt(target.best)}` : `친구 중 <b>1위</b>!`}</span>
+      <span class="cp-rank">${rank}/${total}위</span>`;
+    const rows = ranking(slug, score);
+    root.querySelector('[data-siderank]').innerHTML = `<p class="sr-title">친구 랭킹 · 이번 주</p>` + rows.slice(0, 6).map(r =>
+      `<div class="sr-row ${r.me ? 'me' : ''}"><span class="n">${r.rank}</span><span class="avatar" style="background:${r.color}">${esc(r.name[0])}</span><span class="nm">${esc(r.name)}</span><b>${fmt(r.best)}</b></div>`).join('');
+  };
+  const showGate = () => {
+    const gate = root.querySelector('[data-gate]');
+    const paint = () => {
+      const h = store.hearts();
+      gate.innerHTML = `<div class="gate-card">
+        <div class="heart-row">${Array.from({ length: h.max }, (_, i) => heartIcon(i < h.n, 30)).join('')}</div>
+        <h3>${h.n ? '하트 1개로 시작할까요?' : '하트가 없어요'}</h3>
+        <p>${h.n ? `한 판에 하트 1개를 써요 (남은 하트 ${h.n}개)` : `다음 하트까지 <b>${mmss(h.nextIn)}</b> · 받은 하트 ${h.inbox}개`}</p>
+        <div class="acts">
+          <button class="btn btn-ghost" data-open-hearts>하트함${h.inbox ? ` (${h.inbox})` : ''}</button>
+          <button class="btn btn-primary" data-use-heart ${h.n ? '' : 'disabled'}>${heartIcon(true, 16)}하트 쓰고 시작</button>
+        </div></div>`;
+    };
+    paint();
+    gate.hidden = false;
+    clearInterval(gateTimer); gateTimer = setInterval(paint, 1000);
+  };
+  const hideGate = () => { clearInterval(gateTimer); root.querySelector('[data-gate]').hidden = true; };
+  const onStart = () => {
+    if (store.startRound(slug)) { hideGate(); drawCompete(); return; }
+    host.post('pause'); showGate();
+  };
+  const showResult = (final) => {
+    const res = store.finishRound(slug, final);
+    const { rank, total, rows } = myRank(slug, 0);
+    const meAt = rows.findIndex(r => r.me);
+    const near = rows.slice(Math.max(0, meAt - 1), meAt + 2);
+    const card = root.querySelector('[data-result]');
+    card.innerHTML = `<button class="rc-close" data-close-result aria-label="닫기">${icon('x', 16)}</button>
+      <p class="rc-score">이번 판 <b>${fmt(final)}</b>${res.isBest && final > 0 ? ' <span class="badge badge-pink">최고 기록!</span>' : ''}</p>
+      <p class="rc-rank">친구 중 <b>${rank}위</b> / ${total}명</p>
+      ${near.map(r => `<div class="sr-row ${r.me ? 'me' : ''}"><span class="n">${r.rank}</span><span class="avatar" style="background:${r.color}">${esc(r.name[0])}</span><span class="nm">${esc(r.name)}</span><b>${fmt(r.best)}</b></div>`).join('')}
+      <p class="rc-next">${heartIcon(true, 13)} 다음 판은 하트 1개 · 남은 하트 <b data-heart-n>${store.hearts().n}</b></p>`;
+    card.hidden = false;
+    clearTimeout(resultTimer); resultTimer = setTimeout(() => { card.hidden = true; }, 8000);
+    drawCompete();
+  };
+  drawCompete();
+
   // ---- 게임 호스트 ----
   store.recordPlayedWith(['minji', 'hajun'], slug);   // 최근 같이 한 친구
 
   const host = createHost({
     iframe, slug,
     onEvent(type, data) {
-      if (type === 'score') { score = Number(data) || 0; root.querySelector('[data-score]').textContent = score.toLocaleString('ko-KR'); }
+      if (type === 'start') onStart();
+      if (type === 'score') {
+        score = Number(data) || 0;
+        root.querySelector('[data-score]').textContent = score.toLocaleString('ko-KR');
+        if (target && score > target.best) {          // 친구 추월!
+          sticker(`${target.name} 추월!`);
+          if (FRIENDS[target.name] && !ai) later(() => say(target.name, ['헐 벌써?!', '잠깐만 내 기록ㅠㅠ', '다음 판에 다시 넘는다'][Math.floor(Math.random() * 3)]), 500);
+        }
+        drawCompete();
+      }
       if (type === 'gameOver') {
+        showResult(Number(data) || score);
         if (!ai) later(() => say('하준', '한 판 더? 이번엔 내가 이김'), 900);
         else if (!busy && Date.now() - lastAuto > 12000) { lastAuto = Date.now(); askAi('gameOver', { score: Number(data) || score }); }
       }
@@ -164,6 +235,9 @@ export function render(view, slug) {
   const onClick = async e => {
     const t = e.target;
     if (t.closest('[data-exit]')) return goBack(`#/game/${slug}`);
+    if (t.closest('[data-use-heart]')) { if (store.startRound(slug)) { hideGate(); host.post('resume'); drawCompete(); } return; }
+    if (t.closest('[data-open-hearts]')) { openHeartSheet(drawCompete); return; }
+    if (t.closest('[data-close-result]')) { root.querySelector('[data-result]').hidden = true; return; }
     if (t.closest('[data-invite]')) {
       const ok = await copyText(asset(`index.html#/game/${slug}`));
       store.setFlag('invited');
@@ -213,6 +287,7 @@ export function render(view, slug) {
 
   return () => {
     alive = false;
+    clearInterval(gateTimer); clearTimeout(resultTimer);
     host.destroy();
     timers.forEach(clearTimeout);
     document.removeEventListener('keydown', onKey);

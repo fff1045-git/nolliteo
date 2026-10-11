@@ -2,7 +2,8 @@
 import { allGames, asset, esc, CATEGORIES, stats } from '../data.js';
 import { recommend } from '../recommend.js';
 import { icon } from '../icons.js';
-import { pointsChip, streakChip, gameCard, playAction } from '../ui.js';
+import { pointsChip, gameCard, playAction } from '../ui.js';
+import { heartChip } from '../hearts-ui.js';
 
 export function rankRows(games) {
   return games.map((g, i) => {
@@ -31,7 +32,7 @@ export function render(view) {
     <div class="page topbar">
       <span class="logo">놀이터 ${icon('star', 22)}</span>
       <span class="spacer"></span>
-      ${streakChip()}
+      ${heartChip()}
       ${pointsChip()}
       <a class="icon-btn" href="#/search" aria-label="검색">${icon('search', 22)}</a>
     </div>

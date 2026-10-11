@@ -536,3 +536,123 @@ body.no-tabs #view { padding-bottom: calc(var(--safe-b) + 110px); }
 .rec-friend b { font-size: 16px; }
 .rec-friend small { color: var(--muted); font-size: 12px; min-height: 34px; line-height: 1.4; }
 @media (min-width: 600px) { .rec-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* ---------- 하트 ---------- */
+.hi { fill: #E9E4F5; stroke: var(--ink); stroke-width: 2; }
+.hi.on { fill: var(--pink); }
+.heart-chip { background: #fff; position: relative; gap: 5px; padding: 0 12px; }
+.heart-chip small { font-family: var(--font-body); font-weight: 700; font-size: 11px; color: var(--muted); min-width: 26px; }
+.heart-chip .dot { position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; background: var(--pink); border: 2px solid #fff; }
+.heart-row { display: flex; gap: 6px; justify-content: center; margin: 4px 0 10px; flex-wrap: wrap; }
+.heart-list { display: flex; flex-direction: column; border: 2.5px solid var(--ink); border-radius: 18px; padding: 2px 12px; max-height: 260px; overflow: auto; }
+.sheet .friend-row .fi small { color: var(--muted); }
+
+/* ---------- 플레이: 친구 경쟁 바 · 하트 관문 · 결과 카드 ---------- */
+.compete-bar { display: flex; align-items: center; gap: 8px; padding: 0 12px 6px; font-size: 12px; color: rgba(255,255,255,.85); }
+.cp-heart { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 0 10px; border-radius: 999px; border: 2px solid rgba(255,255,255,.7); background: rgba(255,255,255,.1); color: #fff; font: inherit; }
+.cp-heart b { font-family: var(--font-title); font-weight: 400; font-size: 15px; }
+.cp-heart small { opacity: .75; font-size: 11px; }
+.cp-target { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-target b { color: var(--yellow); font-weight: 900; }
+.cp-rank { font-family: var(--font-title); font-size: 14px; background: var(--yellow); color: var(--ink); border-radius: 999px; padding: 2px 10px; }
+.gate { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; background: rgba(26,16,51,.72); }
+.gate[hidden], .result-card[hidden] { display: none; }
+.gate-card { width: min(86%, 340px); background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 24px; box-shadow: 0 6px 0 var(--ink); padding: 20px 18px; text-align: center; }
+.gate-card h3 { font-size: 22px; }
+.gate-card p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+.gate-card .acts { display: flex; gap: 8px; margin-top: 16px; }
+.gate-card .acts .btn { flex: 1; padding: 0 8px; font-size: 15px; }
+.result-card { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 5; width: min(92%, 330px); background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 5px 0 var(--ink); padding: 12px 14px 10px; animation: up .25s ease-out; }
+.rc-close { position: absolute; top: 6px; right: 6px; width: 36px; height: 36px; border: 0; background: none; display: grid; place-items: center; color: var(--muted); }
+.rc-score { font-size: 14px; } .rc-score b { font-family: var(--font-title); font-weight: 400; font-size: 22px; color: var(--theme); }
+.rc-rank { font-size: 13px; color: var(--muted); margin: 2px 0 6px; } .rc-rank b { color: var(--pink); font-size: 16px; }
+.rc-next { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+.sr-row { display: grid; grid-template-columns: 22px 26px 1fr auto; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 10px; font-size: 13px; }
+.sr-row .n { font-family: var(--font-title); text-align: center; }
+.sr-row .avatar { width: 24px; height: 24px; font-size: 11px; border-width: 2px; }
+.sr-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-row b { font-family: var(--font-title); font-weight: 400; }
+.sr-row.me { background: #FFF3C4; }
+.side-rank { display: none; }
+@media (min-width: 1024px) {
+  .compete-bar { position: absolute; top: 18px; left: 76px; padding: 0; z-index: 5; }
+  .side-rank { display: block; padding: 10px 12px; color: var(--ink); border-radius: 18px; box-shadow: none; }
+  .sr-title { font-weight: 900; font-size: 13px; margin: 0 0 4px 4px; }
+}
+
+/* ---------- 친구 랭킹 표 ---------- */
+.friend-rank { padding: 6px 12px; margin-bottom: 8px; }
+.fr-row { display: grid; grid-template-columns: 28px 34px 1fr auto auto; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 2px dashed var(--line); }
+.fr-row:last-of-type { border-bottom: 0; }
+.fr-row.me { background: #FFF3C4; border-radius: 12px; border-bottom-color: transparent; }
+.fr-no { font-family: var(--font-title); font-size: 18px; text-align: center; }
+.fr-no.top1 { color: #E5A500; } .fr-no.top2 { color: #8C8AA6; } .fr-no.top3 { color: #E0773D; }
+.fr-row .avatar { width: 32px; height: 32px; font-size: 14px; color: var(--ink); }
+.fr-name { min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.fr-name b { font-size: 15px; } .fr-name small { color: var(--muted); font-size: 11px; }
+.fr-score { font-family: var(--font-title); font-size: 17px; white-space: nowrap; }
+.fr-score small { font-size: 11px; color: var(--muted); margin-left: 1px; }
+.fr-act .btn { min-height: 34px; padding: 0 10px; font-size: 13px; gap: 4px; }
+.rank-sum { font-size: 14px; margin: 4px 0 10px; } .rank-sum b { color: var(--pink); }
+.game-chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 12px; scrollbar-width: none; }
+.chip-tab { display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 0 12px 0 6px; border: 2.5px solid var(--ink); border-radius: 999px; background: #fff; font-weight: 700; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+.chip-tab img { border-radius: 50%; border: 2px solid var(--ink); }
+.chip-tab.on { background: var(--yellow); box-shadow: 0 3px 0 var(--ink); }
+@media (max-width: 380px) { .fr-row { grid-template-columns: 24px 30px 1fr auto; } .fr-act { grid-column: 2 / -1; justify-self: end; } }
+
+/* ---------- 마이홈 (싸이월드 미니홈피 느낌) ---------- */
+.minihome { background: #fff; border: 3px solid var(--ink); border-radius: 24px; box-shadow: var(--shadow-card); padding: 12px; margin-top: 6px; }
+.hp-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 4px 10px; border-bottom: 2px dashed var(--line); flex-wrap: wrap; }
+.hp-top b { font-family: var(--font-title); font-weight: 400; font-size: 19px; color: var(--theme); }
+.hp-count { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .02em; }
+.hp-count em { font-style: normal; color: var(--pink); }
+.hp-body { display: grid; gap: 12px; margin-top: 12px; }
+.hp-profile { display: grid; grid-template-columns: 92px 1fr; grid-template-rows: auto auto auto; column-gap: 12px; align-items: center; padding: 12px; border-radius: 18px; box-shadow: none; border-width: 2.5px; background: #F8F5FF; }
+.hp-av { grid-row: 1 / 4; width: 92px; height: 110px; border-radius: 14px; background: linear-gradient(#fff, #EDE6FF); border: 2.5px solid var(--ink); display: grid; place-items: end center; overflow: hidden; padding-bottom: 4px; }
+.hp-av img { height: 92%; width: auto; image-rendering: pixelated; }
+.hp-name { font-family: var(--font-title); font-size: 20px; } .hp-name small { font-family: var(--font-body); font-size: 11px; color: var(--muted); font-weight: 700; }
+.hp-mood { font-size: 13px; } .hp-mood span { display: inline-block; background: var(--yellow); border: 2px solid var(--ink); border-radius: 8px; font-size: 11px; font-weight: 700; padding: 0 6px; margin-right: 6px; }
+.hp-acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.hp-acts .btn { min-height: 36px; font-size: 13px; padding: 0 10px; gap: 4px; }
+.hp-room-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; } .hp-room-head b { font-family: var(--font-title); font-weight: 400; font-size: 17px; }
+.hp-room-head > span:not(.spacer) { font-size: 12px; color: var(--muted); } .hp-room-head .spacer { flex: 1; }
+.miniroom { position: relative; aspect-ratio: 1; border: 3px solid var(--ink); border-radius: 18px; background: #F3EEFF center / cover no-repeat; overflow: hidden; touch-action: none; user-select: none; }
+.mr-item { position: absolute; transform: translate(-50%, -100%); height: auto; image-rendering: pixelated; pointer-events: none; }
+.miniroom.editing .mr-item { pointer-events: auto; cursor: grab; }
+.mr-item.sel { filter: drop-shadow(0 0 0 #fff) drop-shadow(0 0 3px var(--pink)) drop-shadow(0 0 3px var(--pink)); }
+.mr-tools { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.mr-tools[hidden] { display: none; } .mr-tools span { flex: 1; min-width: 120px; }
+.mr-label { font-weight: 700; font-size: 13px; margin: 12px 0 6px; } .mr-label small { color: var(--muted); font-weight: 400; }
+.mr-rooms { display: flex; gap: 8px; }
+.mr-room { width: 70px; height: 70px; padding: 0; border: 2.5px solid var(--line); border-radius: 12px; overflow: hidden; background: none; }
+.mr-room.on { border-color: var(--ink); box-shadow: 0 3px 0 var(--ink); } .mr-room img { width: 100%; height: 100%; object-fit: cover; }
+.mr-tray { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.mr-pick { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border: 2px solid var(--line); border-radius: 12px; background: #fff; font-size: 11px; font-weight: 700; min-height: 72px; }
+.mr-pick img { height: 44px; width: auto; max-width: 100%; object-fit: contain; image-rendering: pixelated; }
+.mr-pick:active { transform: scale(.95); }
+.av-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+.av-pick { aspect-ratio: .8; border: 2.5px solid var(--line); border-radius: 16px; background: linear-gradient(#fff, #EDE6FF); padding: 6px; display: grid; place-items: end center; }
+.av-pick img { height: 92%; width: auto; image-rendering: pixelated; } .av-pick.on { border-color: var(--ink); box-shadow: 0 3px 0 var(--ink); background: #FFF3C4; }
+.gb-form { display: flex; gap: 8px; margin-bottom: 12px; } .gb-form .input { flex: 1; min-height: 48px; padding: 8px 14px; }
+.gb-list { padding: 4px 14px; }
+.gb-row { display: grid; grid-template-columns: 40px 1fr; gap: 10px; padding: 10px 0; border-bottom: 2px dashed var(--line); }
+.gb-row:last-child { border-bottom: 0; }
+.gb-row img { width: 40px; height: 48px; object-fit: contain; image-rendering: pixelated; }
+.gb-row small { color: var(--muted); font-size: 11px; } .gb-row p { font-size: 14px; margin-top: 2px; }
+.gb-visit { font-size: 11px; color: var(--theme); font-weight: 700; }
+@media (min-width: 760px) {
+  .hp-body { grid-template-columns: 240px 1fr; align-items: start; }
+  .hp-profile { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+  .hp-av { grid-row: auto; width: 150px; height: 180px; margin-bottom: 8px; }
+  .hp-acts { justify-content: center; }
+  .mr-tray { grid-template-columns: repeat(6, 1fr); }
+}
+@media (min-width: 1024px) { .minihome { max-width: 900px; } }
+/* 프로필 미니미: 높이를 픽셀로 고정 (퍼센트 높이가 일부 화면에서 풀리지 않아 잘리던 문제) */
+.hp-av { display: flex; align-items: flex-end; justify-content: center; }
+.hp-av img { height: 100px; width: auto; max-width: none; object-fit: contain; }
+@media (min-width: 760px) { .hp-av img { height: 166px; } }
+.av-pick { display: flex; align-items: flex-end; justify-content: center; }
+.av-pick img { height: 110px; width: auto; max-width: 100%; object-fit: contain; }
+.friend-row .fa { flex-shrink: 0; }
+.hp-link { font-family: var(--font-body); font-size: 11px; font-weight: 700; color: var(--theme); }

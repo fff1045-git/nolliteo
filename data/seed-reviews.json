@@ -244,5 +244,72 @@
   "helpful": 9,
   "date": "2026-10-11",
   "text": "너무 어려워요ㅠ 첫 파이프 지나기가 제일 힘듦."
+ },
+ {
+  "id": "s22",
+  "slug": "cat-pang",
+  "user": "냥집사",
+  "color": "#FFD23F",
+  "rec": true,
+  "playSec": 12000,
+  "helpful": 71,
+  "date": "2026-10-12",
+  "text": "고양이들 표정 다 달라서 귀여워요ㅋㅋ 십자 폭탄 터질 때 쾌감 최고. 친구랑 주간 랭킹 경쟁 중!",
+  "devReply": "냥이들 더 추가할게요! 감사합니다."
+ },
+ {
+  "id": "s23",
+  "slug": "cat-pang",
+  "user": "콤보요정",
+  "color": "#FF5DA2",
+  "rec": true,
+  "playSec": 5400,
+  "helpful": 22,
+  "date": "2026-10-12",
+  "text": "피버 타임 들어가면 점수 미친 듯이 올라가요. 60초 금방 감."
+ },
+ {
+  "id": "s24",
+  "slug": "dragon-flight",
+  "user": "용기사",
+  "color": "#2EE6A6",
+  "rec": true,
+  "playSec": 9600,
+  "helpful": 48,
+  "date": "2026-10-12",
+  "text": "약한 몬스터 칸 찾아서 뚫는 게 핵심이에요. 파워업 먹으면 시원시원!"
+ },
+ {
+  "id": "s25",
+  "slug": "dragon-flight",
+  "user": "운석주의",
+  "color": "#4CC9F0",
+  "rec": false,
+  "playSec": 1800,
+  "helpful": 7,
+  "date": "2026-10-12",
+  "text": "운석 경고가 좀 더 길었으면… 자꾸 맞아요ㅠ"
+ },
+ {
+  "id": "s26",
+  "slug": "kakaka",
+  "user": "드라이버",
+  "color": "#FF8C42",
+  "rec": true,
+  "playSec": 7200,
+  "helpful": 36,
+  "date": "2026-10-12",
+  "text": "옛날 아케이드 레이싱 느낌 나서 좋아요. 언덕 넘을 때 앞차 안 보여서 쫄깃함ㅋㅋ"
+ },
+ {
+  "id": "s27",
+  "slug": "kakaka",
+  "user": "코인수집가",
+  "color": "#B9A3FF",
+  "rec": true,
+  "playSec": 3000,
+  "helpful": 12,
+  "date": "2026-10-12",
+  "text": "코인 줄 따라가다가 차에 박는 게 국룰"
  }
 ]

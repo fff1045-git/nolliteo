@@ -3,13 +3,14 @@ import { loadData } from './data.js';
 import * as store from './store.js';
 import { icon } from './icons.js';
 import { toast } from './ui.js';
+import { heartChip, openHeartSheet, sendHeart } from './hearts-ui.js';
 
 import * as home from './screens/home.js';
 import * as detail from './screens/detail.js';
 import * as play from './screens/play.js';
 import * as review from './screens/review.js';
 import * as rewards from './screens/rewards.js';
-import * as my from './screens/my.js';
+import * as minihome from './screens/minihome.js';
 import * as misc from './screens/misc.js';
 import * as friends from './screens/friends.js';
 
@@ -19,7 +20,8 @@ const routes = [
   [/^play\/([\w-]+)$/, play.render, null],
   [/^review\/([\w-]+)$/, review.render, 'home', true],
   [/^rewards$/, rewards.render, 'rewards'],
-  [/^my$/, my.render, 'my'],
+  [/^my$/, minihome.render, 'my'],
+  [/^minihome\/([\w-]+)$/, minihome.render, 'friends'],
   [/^ranking$/, misc.ranking, 'ranking'],
   [/^friends$/, friends.render, 'friends'],
   [/^category\/([\w-]+)$/, misc.category, 'home'],
@@ -31,7 +33,7 @@ const TABS = [
   ['ranking', '#/ranking', '랭킹', 'chart'],
   ['friends', '#/friends', '친구', 'users'],
   ['rewards', '#/rewards', '리워드', 'gift'],
-  ['my', '#/my', '내 게임', 'grid'],
+  ['my', '#/my', '마이홈', 'home2'],
 ];
 
 const view = document.getElementById('view');
@@ -54,6 +56,7 @@ function renderNav(active) {
     ${TABS.map(([id, href, label, ic]) => `<a class="side-link ${id === active ? 'on' : ''}" href="${href}">${icon(ic, 22)}${label}${id === 'rewards' && noti ? '<i class="noti"></i>' : ''}</a>`).join('')}
     <a class="side-link" href="#/search">${icon('search', 22)}검색</a>
     <div class="side-foot">
+      ${heartChip()}
       <a class="chip dim" href="#/rewards">${icon('fire', 18)}<span data-streak>${a.streak}일째 출석</span></a>
       <a class="chip" href="#/rewards">${icon('coin', 20)}<span data-points>${store.getPoints().toLocaleString('ko-KR')}</span></a>
     </div>`;
@@ -92,6 +95,15 @@ async function start() {
   const c = store.checkIn();
   window.addEventListener('hashchange', route);
   await route();
+  // 하트: 머리글 하트 칩 → 하트 창, 친구에게 보내기 버튼 (어느 화면에서나)
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-hearts]')) { e.preventDefault(); openHeartSheet(); }
+    const b = e.target.closest('[data-send-heart]');
+    if (b && !b.closest('.sheet')) { e.preventDefault(); sendHeart(b.dataset.sendHeart, () => window.dispatchEvent(new Event('hearts-changed'))); }
+  });
+  // 연습용: 친구들이 가끔 하트를 보낸다
+  const gifts = () => { if (store.simulateFriendGifts()) document.querySelectorAll('.heart-chip').forEach(c => { if (!c.querySelector('.dot')) c.insertAdjacentHTML('beforeend', '<i class="dot"></i>'); }); };
+  setTimeout(gifts, 4000); setInterval(gifts, 120000);
   if (c.granted) setTimeout(() => toast(`출석 체크! 연속 ${c.streak}일째`, c.points), 400);
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 }

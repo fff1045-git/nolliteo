@@ -128,6 +128,87 @@
     "icon": "assets/icons/endless-jump-512.png"
   },
   {
+    "slug": "cat-pang",
+    "name": "캣팡",
+    "genre": "퍼즐",
+    "categories": [
+      "puzzle",
+      "versus",
+      "new"
+    ],
+    "tags": [
+      "퍼즐",
+      "손맛",
+      "친구랭킹",
+      "귀여움"
+    ],
+    "developer": "놀이터 스튜디오",
+    "color": "#FFD23F",
+    "orientation": "portrait",
+    "status": "live",
+    "badge": "NEW",
+    "friendsNow": 5,
+    "rankDelta": null,
+    "description": "고양이를 옆 칸으로 밀어 같은 고양이 3마리를 맞추면 팡! 빠르게 이어 맞추면 콤보, 콤보 10번이면 피버 타임(점수 2배). 4마리 이상 맞추면 십자 폭탄 고양이가 생겨요. 60초 승부.",
+    "path": "games/cat-pang/index.html",
+    "image": "assets/img/cat-pang.webp",
+    "icon": "assets/icons/cat-pang-512.png"
+  },
+  {
+    "slug": "dragon-flight",
+    "name": "드래곤 비행",
+    "genre": "액션",
+    "categories": [
+      "action",
+      "versus",
+      "new"
+    ],
+    "tags": [
+      "액션",
+      "슈팅",
+      "손맛",
+      "친구랭킹"
+    ],
+    "developer": "놀이터 스튜디오",
+    "color": "#4CC9F0",
+    "orientation": "portrait",
+    "status": "live",
+    "badge": "NEW",
+    "friendsNow": 3,
+    "rankDelta": null,
+    "description": "아기 드래곤을 타고 끝없이 날아가요. 화면을 끌어 좌우로 움직이면 불꽃이 자동으로 나가요. 몬스터 줄을 뚫고, 코인과 파워업을 먹고, 경고 뒤에 떨어지는 운석을 피하세요.",
+    "path": "games/dragon-flight/index.html",
+    "image": "assets/img/dragon-flight.webp",
+    "icon": "assets/icons/dragon-flight-512.png"
+  },
+  {
+    "slug": "kakaka",
+    "name": "다함께 카카카",
+    "genre": "레이싱",
+    "categories": [
+      "action",
+      "versus",
+      "new"
+    ],
+    "tags": [
+      "레이싱",
+      "손맛",
+      "짧은세션",
+      "친구랭킹"
+    ],
+    "developer": "놀이터 스튜디오",
+    "color": "#FF8C42",
+    "orientation": "portrait",
+    "status": "live",
+    "badge": "NEW",
+    "friendsNow": 4,
+    "rankDelta": null,
+    "description": "커브와 언덕이 이어지는 3차선 도로를 달려요. 좌우로 차선을 바꿔 앞차를 피하고 코인을 먹으세요. 달릴수록 빨라져요!",
+    "path": "games/kakaka/index.html",
+    "image": "assets/img/kakaka.webp",
+    "icon": "assets/icons/kakaka-512.png"
+  },
+  {
     "slug": "moon-garden",
     "name": "달빛 정원 퍼즐",
     "genre": "퍼즐",

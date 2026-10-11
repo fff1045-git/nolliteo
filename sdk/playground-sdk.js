@@ -6,6 +6,7 @@
  *   PG.gameOver(score)  한 판 끝
  *   PG.save(data)       이어하기 저장 → 플랫폼이 대신 저장
  *   PG.load()           Promise로 저장 데이터 받기
+ *   PG.onPause(fn) / PG.onResume(fn)   플랫폼이 잠깐 멈추라고 할 때 (예: 하트가 없어서 막을 때)
  *
  * 실행 환경 3가지를 자동으로 고른다.
  *   1) 놀이터 플레이 화면 iframe 안   → window.parent 로 postMessage
@@ -18,6 +19,7 @@
   var inFrame = window.parent !== window;
   var seq = 0;
   var waiting = {};
+  var pauseFns = [], resumeFns = [];
 
   function bridge() { return window.NolBridge && typeof window.NolBridge.postMessage === 'function' ? window.NolBridge : null; }
 
@@ -31,7 +33,10 @@
 
   function receive(m) {
     if (typeof m === 'string') { try { m = JSON.parse(m); } catch (e) { return; } }
-    if (!m || m.pg !== 1 || m.type !== 'loadResult' || !waiting[m.id]) return;
+    if (!m || m.pg !== 1) return;
+    if (m.type === 'pause') { pauseFns.forEach(function (f) { try { f(); } catch (e) {} }); return; }
+    if (m.type === 'resume') { resumeFns.forEach(function (f) { try { f(); } catch (e) {} }); return; }
+    if (m.type !== 'loadResult' || !waiting[m.id]) return;
     waiting[m.id](m.data == null ? null : m.data);
     delete waiting[m.id];
   }
@@ -61,6 +66,8 @@
         setTimeout(function () { if (!done) { delete waiting[id]; resolve(null); } }, 1500);
       });
     },
+    onPause: function (fn) { pauseFns.push(fn); },
+    onResume: function (fn) { resumeFns.push(fn); },
     vibrate: function (ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} },
     _receive: receive,
   };

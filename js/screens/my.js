@@ -5,20 +5,22 @@ import { icon } from '../icons.js';
 import { sheet, toast } from '../ui.js';
 import { reviewCard } from './detail.js';
 
-export function render(view) {
+export function render(view, opts = {}) {
   const recent = store.recentPlays().map(r => ({ ...r, g: getGame(r.slug) })).filter(r => r.g);
   const mine = store.myReviews().map(r => ({ ...r, user: '나', color: '#6C4CF5', helpfulCount: 0, mine: true }));
 
-  view.innerHTML = `
-  <header class="hero-head">
-    <div class="page topbar"><h1 style="font-size:28px">내 게임</h1></div>
-    <div class="page stat-row">
+  const statRow = `<div class="stat-row">
       <div class="card stat"><b>${fmtTime(store.totalPlaySeconds())}</b><span>총 플레이</span></div>
       <div class="card stat"><b>${recent.length}</b><span>해 본 게임</span></div>
       <div class="card stat"><b>${mine.length}</b><span>쓴 리뷰</span></div>
-    </div>
+    </div>`;
+  view.innerHTML = (opts.embedded ? `<div class="sec-head"><h2>내 게임 기록</h2></div>${statRow}` : `
+  <header class="hero-head">
+    <div class="page topbar"><h1 style="font-size:28px">내 게임</h1></div>
+    <div class="page">${statRow}</div>
   </header>
-  <div class="page pad">
+`) + `
+  <div class="${opts.embedded ? '' : 'page pad'}">
     <div class="sec-head"><h2>최근 플레이</h2></div>
     ${recent.length ? `<div class="rank-list">${recent.map(({ g, at }) => `
       <div class="rank-row" style="grid-template-columns:56px 1fr auto">
@@ -42,7 +44,7 @@ export function render(view) {
       <div class="acts"><button class="btn btn-ghost" data-close>취소</button><button class="btn btn-pink" data-confirm>모두 지우기</button></div>`, {
       onMount(el, close) {
         el.querySelector('[data-confirm]').addEventListener('click', () => {
-          store.resetAll(); store.checkIn(); close(); toast('처음 상태로 돌아갔어요'); render(view);
+          store.resetAll(); store.checkIn(); close(); toast('처음 상태로 돌아갔어요'); location.reload();
         });
       },
     });

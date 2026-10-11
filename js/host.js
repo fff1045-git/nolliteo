@@ -57,6 +57,8 @@ export function createHost({ iframe, slug, onEvent = () => {} }) {
   window.addEventListener('pagehide', flush);
 
   return {
+    /** 게임에 알림 보내기 (pause / resume) */
+    post(type) { reply({ type }); },
     destroy() {
       flush();
       clearInterval(timer);

@@ -124,7 +124,11 @@
     }, 800);
   }
 
+  let paused = false;
+  PG.onPause(() => { paused = true; });
+  PG.onResume(() => { paused = false; lastT = performance.now(); });
   function update(dt) {
+    if (paused) return;
     if (state === 'play') {
       timeLeft -= drain(score) * dt;
       if (timeLeft <= 0) { timeLeft = 0; die('time'); }

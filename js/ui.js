@@ -42,11 +42,6 @@ export function countUp(el, to, from = 0, ms = 900) {
 export function pointsChip() {
   return `<a class="chip" href="#/rewards" aria-label="내 포인트">${icon('coin', 20)}<span data-points>${store.getPoints().toLocaleString('ko-KR')}</span></a>`;
 }
-export function streakChip() {
-  const a = store.attendance();
-  return `<a class="chip dim" href="#/rewards" aria-label="연속 출석">${icon('fire', 18)}<span data-streak>${a.streak}일째</span></a>`;
-}
-
 export function ratePill(slug) {
   const s = stats(slug);
   return s.rate === null ? `<span class="rate-pill none">리뷰 없음</span>` : `<span class="rate-pill">추천 ${s.rate}%</span>`;

@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>다함께 카카카</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@700&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; background: #4CC9F0; }
+  canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; }
+  .ui { position: fixed; font-family: Jua, sans-serif; color: #1A1033; }
+  #sound { top: max(10px, env(safe-area-inset-top)); right: 10px; width: 44px; height: 44px; border-radius: 50%; border: 3px solid #1A1033; background: #fff; display: grid; place-items: center; padding: 0; cursor: pointer; z-index: 2; }
+  .pad { bottom: max(14px, env(safe-area-inset-bottom)); width: min(30vw, 130px); height: min(13vh, 84px); border: 3px solid #1A1033; border-radius: 24px; background: rgba(255,255,255,.88); box-shadow: 0 5px 0 #1A1033; font-size: 30px; display: grid; place-items: center; z-index: 2; padding: 0; cursor: pointer; }
+  .pad:active { transform: translateY(3px); box-shadow: 0 2px 0 #1A1033; }
+  #left { left: max(12px, calc(50vw - 220px)); } #right { right: max(12px, calc(50vw - 220px)); }
+  .ov { inset: 0; display: none; place-items: center; background: rgba(26,16,51,.5); z-index: 3; }
+  .ov.on { display: grid; }
+  .panel { width: min(84vw, 340px); background: #fff; border: 3px solid #1A1033; border-radius: 26px; box-shadow: 0 6px 0 #1A1033; padding: 22px 20px 20px; text-align: center; animation: pop .25s ease-out; }
+  .panel img { width: 120px; height: auto; }
+  .panel h2 { margin: 6px 0 0; font-weight: 400; font-size: 30px; }
+  .panel p { font-family: "Noto Sans KR", sans-serif; font-weight: 700; font-size: 14px; color: #5A4F7A; margin: 8px 0 0; line-height: 1.5; }
+  .panel .s { font-size: 52px; color: #6C4CF5; line-height: 1.1; margin-top: 6px; }
+  .panel .new { display: inline-block; margin-top: 8px; padding: 2px 12px; border-radius: 999px; background: #FF5DA2; color: #fff; }
+  .panel button { margin-top: 16px; width: 100%; min-height: 56px; border: 3px solid #1A1033; border-radius: 18px; background: #FFD23F; box-shadow: 0 4px 0 #1A1033; font: inherit; font-size: 22px; color: #1A1033; cursor: pointer; }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="다함께 카카카 — 좌우로 차선을 바꿔 차를 피하고 코인을 먹어요"></canvas>
+<button id="sound" class="ui" aria-label="소리 끄기"></button>
+<button id="left" class="ui pad" aria-label="왼쪽 차선으로">◀</button>
+<button id="right" class="ui pad" aria-label="오른쪽 차선으로">▶</button>
+<div id="ready" class="ui ov on" role="dialog" aria-label="시작">
+  <div class="panel">
+    <img src="img/me.webp" alt="">
+    <h2>다함께 카카카</h2>
+    <p>3차선 도로를 신나게 달려요!<br>◀ ▶ 버튼·화면 좌우 탭·밀기·방향키로 차선을 바꿔<br>앞차를 피하고 코인을 먹으세요.</p>
+    <button id="start">출발!</button>
+  </div>
+</div>
+<div id="over" class="ui ov" role="dialog" aria-label="게임 결과">
+  <div class="panel">
+    <h2>쾅! 부딪혔어요</h2>
+    <div class="s" id="finalScore">0</div>
+    <p id="finalSub"></p>
+    <div id="newBest"></div>
+    <button id="again">다시 달리기</button>
+  </div>
+</div>
+<script src="../../sdk/playground-sdk.js" data-game="kakaka"></script>
+<script>
+(() => {
+  'use strict';
+  // ---------- 2.5D 도로 (아웃런식 의사 3D) ----------
+  const SEG = 200, RUMBLE = 3, ROADW = 2000, DRAW = 170, CAM_H = 1000, FOV = 100;
+  const DEPTH = 1 / Math.tan((FOV / 2) * Math.PI / 180), PLAYER_Z = CAM_H * DEPTH;
+  const LANE = [-2 / 3, 0, 2 / 3];
+  const INK = '#1A1033';
+  const C = { sky1: '#4CC9F0', sky2: '#FFE2B0', hill: '#B9A3FF', hill2: '#9C84F5', grass: ['#7CF0C8', '#5DE6B4'], rumble: ['#FF5DA2', '#FFFFFF'], road: ['#6E6888', '#67617F'], lane: '#FFFFFF' };
+  const img = n => { const i = new Image(); i.src = `img/${n}.webp`; return i; };
+  const CARS = [img('1'), img('2')], ME = img('me'), COIN = img('coin');
+
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  let W, H, DPR;
+  let segs = [], trackLen = 0;
+  let state = 'ready', paused = false;
+  let pos, speed, maxSpeed, lane, px, traveled, coinsGot, cars, coins, skyX, best = 0, score = 0, crashT = 0, shake = 0;
+
+  // ---------- 코스 만들기 (커브·언덕) ----------
+  const ease = (a, b, p) => a + (b - a) * ((-Math.cos(p * Math.PI) / 2) + .5);
+  const lastY = () => (segs.length ? segs[segs.length - 1].p2.world.y : 0);
+  function addSeg(curve, y) {
+    const n = segs.length;
+    segs.push({ i: n, curve, cars: [], coins: [], trees: n % 9 === 0 ? [-1.6 - Math.random() * .6, 1.6 + Math.random() * .6] : (n % 9 === 4 ? [Math.random() < .5 ? -2.2 : 2.2] : []),
+      p1: { world: { y: lastY(), z: n * SEG }, cam: {}, scr: {} }, p2: { world: { y, z: (n + 1) * SEG }, cam: {}, scr: {} }, color: Math.floor(n / RUMBLE) % 2 });
+  }
+  function addRoad(enter, hold, leave, curve, hill) {
+    const y0 = lastY(), y1 = y0 + hill * SEG, total = enter + hold + leave;
+    for (let n = 0; n < enter; n++) addSeg(ease(0, curve, n / enter), ease(y0, y1, n / total));
+    for (let n = 0; n < hold; n++) addSeg(curve, ease(y0, y1, (enter + n) / total));
+    for (let n = 0; n < leave; n++) addSeg(ease(curve, 0, n / leave), ease(y0, y1, (enter + hold + n) / total));
+  }
+  function buildTrack() {
+    segs = [];
+    addRoad(20, 40, 20, 0, 0);
+    const parts = [[25, 50, 25, 2, 10], [25, 30, 25, -3, -10], [20, 60, 20, 0, 20], [25, 50, 25, -4, 0], [25, 40, 25, 3, -20],
+      [20, 20, 20, 0, 15], [30, 60, 30, 5, 0], [25, 40, 25, -2, -15], [20, 50, 20, 0, 0], [25, 50, 25, -5, 10], [25, 40, 25, 2, -10]];
+    for (const p of parts) addRoad(...p);
+    addRoad(30, 30, 30, 0, -lastY() / SEG);   // 처음 높이로 돌아오기
+    trackLen = segs.length * SEG;
+  }
+  const segAt = z => segs[Math.floor(z / SEG) % segs.length];
+
+  // ---------- 진행 ----------
+  function reset() {
+    buildTrack();
+    pos = 0; speed = 0; maxSpeed = SEG * 55; lane = 1; px = 0; traveled = 0; coinsGot = 0; skyX = 0; score = 0; crashT = 0;
+    cars = []; coins = [];
+    for (let i = 0; i < 14; i++) spawnCar(PLAYER_Z + SEG * (30 + i * 22));
+    for (let i = 0; i < 6; i++) spawnCoins(PLAYER_Z + SEG * (45 + i * 40));
+  }
+  function laneBusy(z, ln) { return cars.some(c => c.lane === ln && Math.abs(c.z - z) < SEG * 6); }
+  function spawnCar(z) {
+    // 같은 자리에 세 차선이 다 막히지 않게
+    const open = [0, 1, 2].filter(l => !laneBusy(z, l));
+    if (open.length <= 1) return;
+    const ln = open[Math.floor(Math.random() * open.length)];
+    cars.push({ z, lane: ln, speed: SEG * (14 + Math.random() * 14), kind: Math.floor(Math.random() * 2) });
+  }
+  function spawnCoins(z) {
+    const ln = Math.floor(Math.random() * 3);
+    for (let i = 0; i < 5; i++) if (!laneBusy(z + i * SEG * 3, ln)) coins.push({ z: z + i * SEG * 3, lane: ln });
+  }
+  function start() {
+    document.getElementById('ready').classList.remove('on'); document.getElementById('over').classList.remove('on');
+    reset(); state = 'play'; speed = SEG * 25; PG.gameStart(); PG.score(0); beep(440, .12, 'square', .05); setTimeout(() => beep(660, .15, 'square', .05), 140);
+  }
+  function crash() {
+    state = 'dead'; crashT = 1; shake = 1;
+    const isNew = score > best; if (isNew) best = score;
+    PG.save({ best }); PG.gameOver(score);
+    beep(110, .45, 'sawtooth', .07); PG.vibrate(80);
+    setTimeout(() => {
+      document.getElementById('finalScore').textContent = score.toLocaleString('ko-KR');
+      document.getElementById('finalSub').textContent = `${Math.floor(traveled / 100).toLocaleString('ko-KR')}m 달림 · 코인 ${coinsGot}개`;
+      document.getElementById('newBest').innerHTML = isNew && score > 0 ? '<span class="new">최고 기록!</span>' : '';
+      document.getElementById('over').classList.add('on');
+    }, 900);
+  }
+  document.getElementById('start').addEventListener('click', start);
+  document.getElementById('again').addEventListener('click', start);
+  PG.onPause(() => { paused = true; }); PG.onResume(() => { paused = false; last = performance.now(); });
+
+  function update(dt) {
+    shake = Math.max(0, shake - dt * 2);
+    if (state === 'dead') { speed = Math.max(0, speed - SEG * 120 * dt); }
+    if (state === 'play') {
+      maxSpeed = SEG * (55 + Math.min(45, traveled / 40000));
+      speed = Math.min(maxSpeed, speed + SEG * 18 * dt);
+    }
+    const dz = speed * dt;
+    pos = (pos + dz) % trackLen; traveled += dz;
+    px += (LANE[lane] - px) * Math.min(1, dt * 12);
+    skyX += segAt(pos + PLAYER_Z).curve * dz * .00002;
+    // 다른 차 (내 위치 기준 상대 거리 z 로 관리)
+    for (const c of cars) c.z -= dz - c.speed * dt;
+    for (const c of coins) c.z -= dz;
+    if (state === 'play') {
+      for (const c of cars) if (Math.abs(c.z - PLAYER_Z) < SEG * .9 && Math.abs(LANE[c.lane] - px) < .42) { crash(); break; }
+      for (const c of coins) if (!c.got && Math.abs(c.z - PLAYER_Z) < SEG * .9 && Math.abs(LANE[c.lane] - px) < .35) { c.got = true; coinsGot++; beep(1320, .06, 'triangle', .04); }
+    }
+    const far = PLAYER_Z + SEG * DRAW * .9;
+    cars = cars.filter(c => c.z > -SEG * 2);
+    while (cars.length < 14) spawnCar(Math.max(far, ...cars.map(c => c.z)) + SEG * (8 + Math.random() * 14));
+    coins = coins.filter(c => !c.got && c.z > -SEG);
+    if (!coins.length || Math.max(...coins.map(c => c.z)) < far) spawnCoins(far + SEG * 20);
+    if (state === 'play') { score = Math.floor(traveled / 100) + coinsGot * 50; PG.score(score); }
+  }
+
+  // ---------- 그리기 ----------
+  function layout() { DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); }
+  function project(p, cx, cy, cz) {
+    p.cam.x = (p.world.x || 0) - cx; p.cam.y = p.world.y - cy; p.cam.z = p.world.z - cz;
+    p.scale = DEPTH / p.cam.z;
+    p.scr.x = Math.round(W / 2 + p.scale * p.cam.x * W / 2);
+    p.scr.y = Math.round(H * .5 - p.scale * p.cam.y * H / 2);
+    p.scr.w = Math.round(p.scale * ROADW * W / 2);
+  }
+  function quad(x1, y1, w1, x2, y2, w2, color) { ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x1 - w1, y1); ctx.lineTo(x2 - w2, y2); ctx.lineTo(x2 + w2, y2); ctx.lineTo(x1 + w1, y1); ctx.closePath(); ctx.fill(); }
+  function drawBg() {
+    const g = ctx.createLinearGradient(0, 0, 0, H * .6); g.addColorStop(0, C.sky1); g.addColorStop(1, C.sky2);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#FFD23F'; ctx.beginPath(); ctx.arc(W * .72 - skyX * W * .3 % W, H * .2, Math.min(W, H) * .07, 0, 7); ctx.fill();
+    for (const [col, amp, base, sp] of [[C.hill2, H * .1, H * .5, .5], [C.hill, H * .07, H * .52, 1]]) {
+      ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(0, H);
+      for (let x = 0; x <= W + 10; x += 10) { const t = (x / W + skyX * sp) * Math.PI * 2; ctx.lineTo(x, base - Math.abs(Math.sin(t * 1.5)) * amp - Math.sin(t * 3.7) * amp * .3); }
+      ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+    }
+  }
+  function drawSprite(im, x, y, w, alpha = 1) {
+    if (!(im.complete && im.naturalWidth) || w < 2) return;
+    const h = w * im.naturalHeight / im.naturalWidth;
+    ctx.globalAlpha = alpha; ctx.drawImage(im, x - w / 2, y - h, w, h); ctx.globalAlpha = 1;
+  }
+  function tree(x, y, s) {
+    if (s < 2) return;
+    ctx.fillStyle = '#8A5A3C'; ctx.fillRect(x - s * .08, y - s * .5, s * .16, s * .5);
+    ctx.fillStyle = '#2EE6A6'; ctx.beginPath(); ctx.arc(x, y - s * .7, s * .38, 0, 7); ctx.fill();
+    ctx.lineWidth = Math.max(1, s * .04); ctx.strokeStyle = INK; ctx.stroke();
+  }
+  function draw() {
+    drawBg();
+    const base = segAt(pos), bp = (pos % SEG) / SEG;
+    const playerSeg = segAt(pos + PLAYER_Z), pp = ((pos + PLAYER_Z) % SEG) / SEG;
+    const camY = ease(playerSeg.p1.world.y, playerSeg.p2.world.y, pp) + CAM_H;
+    let x = 0, dx = -(base.curve * bp), maxy = H;
+    const vis = [];
+    for (let n = 0; n < DRAW; n++) {
+      const s = segs[(base.i + n) % segs.length], looped = s.i < base.i;
+      const cz = pos - (looped ? trackLen : 0);
+      project(s.p1, px * ROADW - x, camY, cz);
+      project(s.p2, px * ROADW - x - dx, camY, cz);
+      x += dx; dx += s.curve;
+      s.clip = maxy; s.n = n;
+      if (s.p1.cam.z <= DEPTH || s.p2.scr.y >= s.p1.scr.y || s.p2.scr.y >= maxy) { vis.push(s); continue; }
+      const p1 = s.p1.scr, p2 = s.p2.scr;
+      ctx.fillStyle = C.grass[s.color]; ctx.fillRect(0, p2.y, W, p1.y - p2.y + 1);
+      quad(p1.x, p1.y, p1.w * 1.12, p2.x, p2.y, p2.w * 1.12, C.rumble[s.color]);
+      quad(p1.x, p1.y, p1.w, p2.x, p2.y, p2.w, C.road[s.color]);
+      if (s.color === 0) for (const l of [-1 / 3, 1 / 3]) {   // 차선 점선
+        const lw1 = p1.w * .025, lw2 = p2.w * .025;
+        quad(p1.x + p1.w * l * 2, p1.y, lw1, p2.x + p2.w * l * 2, p2.y, lw2, C.lane);
+      }
+      maxy = p2.y;
+      vis.push(s);
+    }
+    // 멀리서 가까이로: 나무 · 코인 · 차
+    for (let k = vis.length - 1; k >= 0; k--) {
+      const s = vis[k], p = s.p1.scr, sc = s.p1.scale;
+      if (!(s.p1.cam.z > DEPTH)) continue;
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, s.clip); ctx.clip();
+      for (const t of s.trees) tree(p.x + sc * t * ROADW * W / 2, p.y, sc * ROADW * W / 2 * .55);
+      const z0 = (s.n) * SEG - bp * SEG, z1 = z0 + SEG;
+      for (const c of coins) if (!c.got && c.z >= z0 && c.z < z1) {
+        const f = (c.z - z0) / SEG, X = p.x + (s.p2.scr.x - p.x) * f, Y = p.y + (s.p2.scr.y - p.y) * f, w = (p.w + (s.p2.scr.w - p.w) * f);
+        drawSprite(COIN, X + w * LANE[c.lane], Y - w * .05, w * .2);
+      }
+      for (const c of cars) if (c.z >= z0 && c.z < z1) {
+        const f = (c.z - z0) / SEG, X = p.x + (s.p2.scr.x - p.x) * f, Y = p.y + (s.p2.scr.y - p.y) * f, w = (p.w + (s.p2.scr.w - p.w) * f);
+        drawSprite(CARS[c.kind], X + w * LANE[c.lane], Y, w * .5);
+      }
+      ctx.restore();
+    }
+    // 내 차 (화면 아래 가운데, 차선 바꿀 때 살짝 기울어짐)
+    const bounce = state === 'play' ? Math.sin(performance.now() / 70) * (speed / maxSpeed) * 1.5 : 0;
+    const sx = (Math.random() - .5) * shake * 16, sy = (Math.random() - .5) * shake * 12;
+    ctx.save(); ctx.translate(W / 2 + sx, H - Math.min(H * .13, 84) - 22 + bounce + sy);   // ◀ ▶ 버튼 위 ctx.rotate((LANE[lane] - px) * .35);
+    drawSprite(ME, 0, 0, Math.min(W * .34, H * .3), state === 'dead' ? .9 : 1);
+    ctx.restore();
+    if (crashT > 0) { ctx.fillStyle = `rgba(255,255,255,${crashT * .5})`; ctx.fillRect(0, 0, W, H); crashT = Math.max(0, crashT - .05); }
+    // HUD
+    text(score.toLocaleString('ko-KR'), W / 2, Math.max(46, H * .07), Math.min(44, W * .1), '#fff');
+    ctx.font = `${Math.round(Math.min(16, W * .042))}px Jua, sans-serif`; ctx.fillStyle = '#1A1033'; ctx.textAlign = 'center';
+    ctx.fillText(`${Math.floor(speed / SEG * 3.6)}km/h  ·  ${Math.floor(traveled / 100).toLocaleString('ko-KR')}m  ·  코인 ${coinsGot}`, W / 2, Math.max(46, H * .07) + Math.min(32, H * .045));
+  }
+  function text(t, x, y, size, color) { ctx.font = `${Math.round(size)}px Jua, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = Math.max(4, size * .14); ctx.strokeStyle = INK; ctx.strokeText(t, x, y); ctx.fillStyle = color; ctx.fillText(t, x, y); }
+
+  let last = performance.now();
+  function frame(now) { const dt = Math.min(.04, (now - last) / 1000); last = now; if (!paused && state !== 'ready') update(dt); draw(); requestAnimationFrame(frame); }
+
+  // ---------- 입력 ----------
+  const move = d => { if (state !== 'play' || paused) return; const n = Math.max(0, Math.min(2, lane + d)); if (n !== lane) { lane = n; beep(380, .04, 'triangle', .03); } };
+  document.getElementById('left').addEventListener('pointerdown', e => { e.preventDefault(); move(-1); });
+  document.getElementById('right').addEventListener('pointerdown', e => { e.preventDefault(); move(1); });
+  let sx0 = null;
+  cv.addEventListener('pointerdown', e => { sx0 = e.clientX; });
+  cv.addEventListener('pointerup', e => { if (sx0 === null) return; const d = e.clientX - sx0; sx0 = null; move(Math.abs(d) > 30 ? Math.sign(d) : (e.clientX < W / 2 ? -1 : 1)); });
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') { e.preventDefault(); move(-1); }
+    else if (e.key === 'ArrowRight' || e.key === 'd') { e.preventDefault(); move(1); }
+    else if ((e.key === ' ' || e.key === 'Enter') && state !== 'play') start();
+  });
+
+  // ---------- 소리 ----------
+  let ac = null, muted = false;
+  function beep(f, d = .08, type = 'square', v = .05) { if (muted) return; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v, ac.currentTime); g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + d); o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + d); } catch (e) {} }
+  const sb = document.getElementById('sound');
+  const sicon = () => { sb.innerHTML = muted ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5"/></svg>' : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>'; };
+  sb.addEventListener('pointerdown', e => e.stopPropagation()); sb.addEventListener('click', () => { muted = !muted; sicon(); }); sicon();
+
+  addEventListener('resize', layout); layout(); reset(); requestAnimationFrame(frame);
+  PG.load().then(s => { if (s && typeof s.best === 'number') best = s.best; PG.ready(); });
+  window.__car = { get state() { return state; }, get score() { return score; }, get lane() { return lane; }, get cars() { return cars; }, get coins() { return coinsGot; }, move, start, get traveled() { return traveled; } };
+})();
+</script>
+</body>
+</html>
