@@ -1,4 +1,6 @@
-// 플레이: 풀스크린 게임(iframe 샌드박스) + 음성챗·채팅 흉내(연습용, 실제 연결 없음)
+// 플레이: 풀스크린 게임(iframe 샌드박스) + 음성챗·채팅
+// 친구 채팅: 이 PC에 AI 친구 서버(ai-friends/server.py)가 켜져 있으면 민지·하준이 Codex(코덱스 짭 MCP)로 대답,
+//            없으면 연습용 대사로 동작한다. 음성챗은 아직 흉내만.
 // 모바일: 위(나가기·음성챗·초대) / 가운데 게임 / 아래(리액션·채팅)
 // 데스크톱: 가운데 세로 게임 프레임 + 오른쪽 채팅 패널
 import { getGame, asset, esc } from '../data.js';
@@ -6,6 +8,7 @@ import * as store from '../store.js';
 import { createHost } from '../host.js';
 import { icon } from '../icons.js';
 import { toast, goBack, copyText, soonSheet } from '../ui.js';
+import { connectAiFriends } from '../ai-friends.js';
 
 const FRIENDS = { 민지: '#4CC9F0', 하준: '#FFD23F', 나: '#FF5DA2' };
 const SCRIPT = [
@@ -87,7 +90,48 @@ export function render(view, slug) {
       root.querySelectorAll('[data-talking]').forEach(s => { s.textContent = '민지 · 하준 참여 중'; });
     }, 2200);
   };
-  SCRIPT.forEach(([who, text], i) => later(() => say(who, text), 2500 + i * 6500));
+  // ---- 친구 대화: AI 친구 서버가 있으면 Codex로, 없으면 연습용 대사 ----
+  let ai = null, busy = false, alive = true, score = 0, lastAuto = 0;
+  const queued = [];
+  const canned = () => say(Math.random() < .5 ? '민지' : '하준', ['ㅋㅋㅋ', '인정', '오케이!', '집중해 집중'][Math.floor(Math.random() * 4)]);
+  const setNote = text => root.querySelectorAll('.practice-note').forEach(p => { p.textContent = text; });
+  const typing = on => {
+    root.querySelectorAll('.bubble.typing').forEach(b => b.remove());
+    if (!on) return;
+    const html = '<span><b>민지 · 하준</b> 입력 중<span class="dots"><i></i><i></i><i></i></span></span>';
+    root.querySelector('.bubbles').replaceChildren(Object.assign(document.createElement('div'), { className: 'bubble typing', innerHTML: html }));
+    const log = root.querySelector('.log-box');
+    log.append(Object.assign(document.createElement('div'), { className: 'bubble typing', innerHTML: html }));
+    log.scrollTop = log.scrollHeight;
+  };
+  /** AI에게 묻고 답을 말풍선으로. 실패하면 연습용 대사 모드로 바꾸고 false */
+  const askAi = async (event, extra = {}) => {
+    if (!ai) return false;
+    busy = true; typing(true);
+    let ok = true;
+    try {
+      const replies = await ai.send(event, { score, ...extra });
+      if (!alive) return true;
+      typing(false);
+      replies.forEach((r, i) => later(() => say(r.who, r.text), i * 1100));
+    } catch {
+      ok = false;
+      if (!alive) return false;
+      typing(false); ai = null;
+      setNote('AI 친구 연결이 끊겼어요 — 연습용 대사로 바뀜');
+      canned();
+    } finally { busy = false; }
+    if (ok && queued.length) askAi('message', { text: queued.splice(0).join(' / ') });
+    return ok;
+  };
+  connectAiFriends(g).then(conn => {
+    if (!alive) return;
+    if (!conn) { SCRIPT.forEach(([who, text], i) => later(() => say(who, text), 2500 + i * 6500)); return; }
+    ai = conn;
+    setNote('AI 친구 연결됨 — 내 PC의 Codex가 대답해요');
+    root.querySelectorAll('[data-talking]').forEach(t => { t.textContent = '민지 · 하준 참여 중'; });
+    askAi('start');
+  });
 
   const sticker = text => {
     const layer = root.querySelector('.stickers');
@@ -103,8 +147,11 @@ export function render(view, slug) {
   const host = createHost({
     iframe, slug,
     onEvent(type, data) {
-      if (type === 'score') root.querySelector('[data-score]').textContent = Number(data).toLocaleString('ko-KR');
-      if (type === 'gameOver') later(() => say('하준', '한 판 더? 이번엔 내가 이김'), 900);
+      if (type === 'score') { score = Number(data) || 0; root.querySelector('[data-score]').textContent = score.toLocaleString('ko-KR'); }
+      if (type === 'gameOver') {
+        if (!ai) later(() => say('하준', '한 판 더? 이번엔 내가 이김'), 900);
+        else if (!busy && Date.now() - lastAuto > 12000) { lastAuto = Date.now(); askAi('gameOver', { score: Number(data) || score }); }
+      }
       if (type === 'reviewUnlocked') toast('3분 달성! 이제 리뷰 쓰고 +50 받을 수 있어요');
       if (type === 'playMission') toast('오늘 5분 플레이 달성! 리워드에서 +20 받기');
     },
@@ -122,7 +169,14 @@ export function render(view, slug) {
       return;
     }
     const r = t.closest('[data-react]');
-    if (r) { sticker(r.dataset.react); return; }
+    if (r) {
+      sticker(r.dataset.react);
+      if (ai && !busy) {
+        if (r.dataset.react === '도와줘') askAi('help');
+        else if (Date.now() - lastAuto > 8000) { lastAuto = Date.now(); askAi('react', { text: r.dataset.react }); }
+      }
+      return;
+    }
     const mic = t.closest('[data-mic]');
     if (mic) {
       const on = mic.getAttribute('aria-pressed') !== 'true';
@@ -146,7 +200,9 @@ export function render(view, slug) {
     say('나', text);
     inp.value = '';
     if (matchMedia('(pointer: fine)').matches) iframe.focus();
-    later(() => say(Math.random() < .5 ? '민지' : '하준', ['ㅋㅋㅋ', '인정', '오케이!', '집중해 집중'][Math.floor(Math.random() * 4)]), 1800);
+    if (!ai) { later(canned, 1800); return; }
+    if (busy) queued.push(text);   // 답을 기다리는 중이면 모아서 다음에 함께 보낸다
+    else askAi('message', { text });
   };
   const onKey = e => { if (e.key === 'Escape' && document.activeElement?.tagName !== 'INPUT') goBack(`#/game/${slug}`); };
   root.addEventListener('click', onClick);
@@ -154,6 +210,7 @@ export function render(view, slug) {
   document.addEventListener('keydown', onKey);
 
   return () => {
+    alive = false;
     host.destroy();
     timers.forEach(clearTimeout);
     document.removeEventListener('keydown', onKey);

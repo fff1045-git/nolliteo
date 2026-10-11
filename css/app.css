@@ -510,3 +510,11 @@ body.no-tabs #view { padding-bottom: calc(var(--safe-b) + 110px); }
   .detail-art { width: 220px; margin: -40px 0 -60px 110px; }
 }
 @media (min-width: 1024px) { .detail-wrap .reviews-col { padding-top: 22px; } }
+
+/* AI 친구 "입력 중…" 표시 */
+.bubble.typing { opacity: .85; }
+.bubble.typing .dots { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; }
+.bubble.typing .dots i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; border: 0; animation: typing 1s infinite; }
+.bubble.typing .dots i:nth-child(2) { animation-delay: .15s; }
+.bubble.typing .dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes typing { 0%, 60%, 100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
