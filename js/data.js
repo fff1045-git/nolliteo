@@ -4,19 +4,23 @@ import * as store from './store.js';
 const base = new URL('../', import.meta.url);   // 사이트 루트 (GitHub Pages 하위 폴더에서도 동작)
 let games = [];
 let seeds = [];
+let people = [];   // 친구로 추가할 수 있는 사용자 (연습용 예시)
 
 export async function loadData() {
-  const [g, r] = await Promise.all([
+  const [g, r, f] = await Promise.all([
     fetch(new URL('data/games.json', base)).then(res => res.json()),
     fetch(new URL('data/seed-reviews.json', base)).then(res => res.json()),
+    fetch(new URL('data/friends.json', base)).then(res => res.json()).catch(() => []),
   ]);
-  games = g; seeds = r;
+  games = g; seeds = r; people = f;
   return games;
 }
 export const asset = p => new URL(p, base).href;
 export const allGames = () => games;
 export const liveGames = () => games.filter(g => g.status === 'live');
 export const getGame = slug => games.find(g => g.slug === slug);
+export const allPeople = () => people;
+export const getPerson = id => people.find(p => p.id === id);
 
 export const CATEGORIES = [
   { id: 'puzzle', name: '퍼즐', color: 'var(--sky)', icon: 'puzzle' },

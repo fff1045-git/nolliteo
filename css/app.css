@@ -518,3 +518,21 @@ body.no-tabs #view { padding-bottom: calc(var(--safe-b) + 110px); }
 .bubble.typing .dots i:nth-child(2) { animation-delay: .15s; }
 .bubble.typing .dots i:nth-child(3) { animation-delay: .3s; }
 @keyframes typing { 0%, 60%, 100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
+/* ---------- 친구 ---------- */
+.friend-list { padding: 4px 14px; }
+.friend-row { display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 2px dashed var(--line); }
+.friend-row:last-child { border-bottom: 0; }
+.friend-row .fi { min-width: 0; display: flex; flex-direction: column; }
+.friend-row .fi b { font-size: 16px; }
+.friend-row .fi small { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.friend-row .fa { display: flex; align-items: center; gap: 6px; }
+.friend-empty { color: var(--muted); padding: 14px 2px; font-size: 14px; }
+.avatar.lg { width: 46px; height: 46px; font-size: 19px; position: relative; color: var(--ink); }
+.avatar .online { position: absolute; right: -2px; bottom: -2px; width: 14px; height: 14px; border-radius: 50%; background: var(--mint); border: 2.5px solid #fff; }
+.icon-btn.sm { width: 40px; height: 40px; box-shadow: 0 2px 0 var(--ink); }
+.rec-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.rec-friend { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 16px 12px; border-radius: 20px; }
+.rec-friend b { font-size: 16px; }
+.rec-friend small { color: var(--muted); font-size: 12px; min-height: 34px; line-height: 1.4; }
+@media (min-width: 600px) { .rec-grid { grid-template-columns: repeat(3, 1fr); } }

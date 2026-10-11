@@ -1,0 +1,12 @@
+[
+  { "id": "minji", "name": "민지", "code": "NOL-MJ24", "color": "#4CC9F0", "fav": ["block-pop", "pop-star"], "status": { "online": true, "playing": "block-pop" }, "mutual": 3, "bio": "콤보 장인, 지는 건 못 참음" },
+  { "id": "hajun", "name": "하준", "code": "NOL-HJ07", "color": "#FFD23F", "fav": ["2048", "block-pop"], "status": { "online": true, "playing": "2048" }, "mutual": 2, "bio": "느긋하게 고수인 척" },
+  { "id": "seoyeon", "name": "서연", "code": "NOL-SY88", "color": "#FF5DA2", "fav": ["pop-star", "2048"], "status": { "online": true, "playing": "pop-star" }, "mutual": 2, "bio": "별 터뜨리기 전문" },
+  { "id": "doyun", "name": "도윤", "code": "NOL-DY31", "color": "#2EE6A6", "fav": ["flap-bird"], "status": { "online": true, "playing": "flap-bird" }, "mutual": 1, "bio": "파닥 버드 최고 기록 47" },
+  { "id": "jiwoo", "name": "지우", "code": "NOL-JW55", "color": "#B9A3FF", "fav": ["block-pop", "flap-bird"], "status": { "online": false, "lastSeenMin": 35 }, "mutual": 4, "bio": "출근길 한 판" },
+  { "id": "yejun", "name": "예준", "code": "NOL-YJ12", "color": "#FF8C42", "fav": ["2048"], "status": { "online": false, "lastSeenMin": 180 }, "mutual": 0, "bio": "2048 만들 때까지 안 잠" },
+  { "id": "haeun", "name": "하은", "code": "NOL-HE46", "color": "#4CC9F0", "fav": ["pop-star", "block-pop"], "status": { "online": true, "playing": "block-pop" }, "mutual": 1, "bio": "힐링 퍼즐 좋아해요" },
+  { "id": "siwoo", "name": "시우", "code": "NOL-SW90", "color": "#FFD23F", "fav": ["flap-bird", "2048"], "status": { "online": false, "lastSeenMin": 1440 }, "mutual": 2, "bio": "손가락 빠름 주의" },
+  { "id": "suah", "name": "수아", "code": "NOL-SA03", "color": "#2EE6A6", "fav": ["2048", "pop-star"], "status": { "online": false, "lastSeenMin": 12 }, "mutual": 0, "bio": "자기 전에 10분만" },
+  { "id": "junho", "name": "준호", "code": "NOL-JH77", "color": "#FF5DA2", "fav": ["block-pop"], "status": { "online": true, "playing": "block-pop" }, "mutual": 1, "bio": "블록 팡팡 랭킹 노리는 중" }
+]

@@ -11,6 +11,7 @@ import * as review from './screens/review.js';
 import * as rewards from './screens/rewards.js';
 import * as my from './screens/my.js';
 import * as misc from './screens/misc.js';
+import * as friends from './screens/friends.js';
 
 const routes = [
   [/^$/, home.render, 'home'],
@@ -20,7 +21,7 @@ const routes = [
   [/^rewards$/, rewards.render, 'rewards'],
   [/^my$/, my.render, 'my'],
   [/^ranking$/, misc.ranking, 'ranking'],
-  [/^friends$/, misc.friends, 'friends'],
+  [/^friends$/, friends.render, 'friends'],
   [/^category\/([\w-]+)$/, misc.category, 'home'],
   [/^search$/, misc.search, 'home'],
 ];

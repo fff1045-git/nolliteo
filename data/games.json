@@ -103,6 +103,31 @@
     "icon": "assets/icons/flap-bird-512.png"
   },
   {
+    "slug": "endless-jump",
+    "name": "무한 점프",
+    "genre": "액션",
+    "categories": [
+      "action",
+      "new"
+    ],
+    "tags": [
+      "손맛",
+      "액션",
+      "짧은세션"
+    ],
+    "developer": "점프점프 랩",
+    "color": "#2EE6A6",
+    "orientation": "portrait",
+    "status": "live",
+    "badge": "NEW",
+    "rankDelta": null,
+    "description": "계단이 지그재그로 끝없이 이어져요. 다음 계단이 있는 쪽(왼쪽·오른쪽)을 눌러 한 칸씩 점프! 틀린 쪽을 누르거나 시간 막대가 다 줄면 떨어져요. 올라갈수록 시간이 빨리 줄어요.",
+    "image": "assets/img/endless-jump.webp",
+    "friendsNow": 2,
+    "path": "games/endless-jump/index.html",
+    "icon": "assets/icons/endless-jump-512.png"
+  },
+  {
     "slug": "moon-garden",
     "name": "달빛 정원 퍼즐",
     "genre": "퍼즐",
@@ -121,28 +146,6 @@
     "rankDelta": -1,
     "description": "달빛이 내린 정원에 꽃과 잎을 맞춰 피워 내는 힐링 퍼즐.",
     "image": "assets/img/moon-garden.webp"
-  },
-  {
-    "slug": "endless-jump",
-    "name": "무한 점프",
-    "genre": "액션",
-    "categories": [
-      "action",
-      "new"
-    ],
-    "tags": [
-      "손맛",
-      "액션",
-      "짧은세션"
-    ],
-    "developer": "점프점프 랩",
-    "color": "#2EE6A6",
-    "orientation": "portrait",
-    "status": "soon",
-    "badge": "NEW",
-    "rankDelta": null,
-    "description": "탭 한 번에 한 칸! 끝없는 계단을 어디까지 오를 수 있을까요?",
-    "image": "assets/img/endless-jump.webp"
   },
   {
     "slug": "cat-diner",

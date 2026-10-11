@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>무한 점프</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&family=Noto+Sans+KR:wght@700&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; background: var(--bg); }
+  canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; }
+  .ui { position: fixed; font-family: var(--font); }
+  #sound { top: max(10px, env(safe-area-inset-top)); right: 10px; width: 44px; height: 44px; border-radius: 50%; border: var(--btn-border); background: rgba(0,0,0,.18); color: #fff; display: grid; place-items: center; padding: 0; cursor: pointer; z-index: 2; }
+  .pad { bottom: max(14px, env(safe-area-inset-bottom)); width: min(42vw, 180px); height: min(17vh, 110px); border: var(--btn-border); border-radius: 26px; background: var(--pad); color: var(--pad-text); box-shadow: var(--btn-shadow); font-size: 34px; display: grid; place-items: center; cursor: pointer; z-index: 2; padding: 0; }
+  .pad small { display: block; font-size: 13px; font-family: "Noto Sans KR", sans-serif; font-weight: 700; opacity: .85; }
+  .pad:active, .pad.hit { transform: translateY(3px) scale(.97); }
+  #left { left: max(12px, calc(50vw - 200px)); } #right { right: max(12px, calc(50vw - 200px)); }
+  #over { inset: 0; display: none; place-items: center; background: var(--scrim); z-index: 3; }
+  #over.on { display: grid; }
+  .panel { width: min(84vw, 340px); background: var(--panel); color: var(--panel-text); border: var(--panel-border); border-radius: 26px; box-shadow: var(--panel-shadow); padding: 24px 20px 20px; text-align: center; animation: pop .25s ease-out; }
+  .panel h2 { margin: 0; font-weight: 400; font-size: 30px; }
+  .panel .s { font-size: 56px; color: var(--accent2); line-height: 1.1; margin: 8px 0 2px; }
+  .panel .b { font-family: "Noto Sans KR", sans-serif; font-weight: 700; font-size: 14px; color: var(--muted); }
+  .panel .new { display: inline-block; margin-top: 8px; padding: 2px 12px; border-radius: 999px; background: var(--good); color: #1A1033; }
+  .panel button { margin-top: 18px; width: 100%; min-height: 56px; border: var(--btn-border); border-radius: var(--btn-radius); background: var(--btn); box-shadow: var(--btn-shadow); font: inherit; font-size: 21px; color: var(--btn-text); cursor: pointer; }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="무한 점프 — 다음 계단이 있는 쪽 버튼을 눌러 올라가요"></canvas>
+<button id="sound" class="ui" aria-label="소리 끄기"></button>
+<button id="left" class="ui pad" aria-label="왼쪽 위로 점프">◀<small>왼쪽</small></button>
+<button id="right" class="ui pad" aria-label="오른쪽 위로 점프">▶<small>오른쪽</small></button>
+<div id="over" class="ui" role="dialog" aria-label="게임 결과">
+  <div class="panel">
+    <h2 id="overTitle">으앗, 떨어졌어요!</h2>
+    <div class="s" id="finalScore">0</div>
+    <div class="b" id="finalBest">최고 기록 0계단</div>
+    <div id="newBest"></div>
+    <button id="again">다시 오르기</button>
+  </div>
+</div>
+<script src="../../sdk/playground-sdk.js" data-game="endless-jump"></script>
+<script>
+(() => {
+  'use strict';
+  // ---------- 테마 (1안 candy / 2안 neon) ----------
+  const THEME_NAME = 'candy';
+  const THEMES = {
+    candy: {
+      font: 'Jua', neon: false, ink: '#1A1033', sky: ['#B9A3FF', '#F3EEFF'], step: ['#FFD23F', '#FF8C42', '#2EE6A6', '#4CC9F0', '#FF5DA2'],
+      ball: '#FF5DA2', bar: '#2EE6A6', barLow: '#FF5DA2', text: '#FFFFFF',
+      css: { '--bg': '#B9A3FF', '--font': 'Jua, sans-serif', '--scrim': 'rgba(26,16,51,.6)', '--panel': '#fff', '--panel-text': '#1A1033', '--panel-border': '3px solid #1A1033',
+        '--panel-shadow': '0 6px 0 #1A1033', '--accent2': '#6C4CF5', '--muted': '#5A4F7A', '--good': '#2EE6A6', '--btn': '#FFD23F', '--btn-text': '#1A1033', '--btn-border': '3px solid #1A1033',
+        '--btn-radius': '18px', '--btn-shadow': '0 5px 0 #1A1033', '--pad': '#FFFFFF', '--pad-text': '#1A1033' },
+    },
+    neon: {
+      font: 'Black Han Sans', neon: true, ink: 'rgba(6,4,20,.6)', sky: ['#0B0A1F', '#2A1460'], step: ['#22E1FF', '#8B5CFF', '#FF3DA8', '#B8FF3D', '#FFC23D'],
+      ball: '#FF3DA8', bar: '#B8FF3D', barLow: '#FF3DA8', text: '#FFFFFF',
+      css: { '--bg': '#0B0A1F', '--font': '"Black Han Sans", sans-serif', '--scrim': 'rgba(5,4,16,.7)', '--panel': 'rgba(24,21,56,.94)', '--panel-text': '#F4F2FF', '--panel-border': '1.5px solid rgba(123,92,255,.7)',
+        '--panel-shadow': '0 0 40px rgba(123,92,255,.45)', '--accent2': '#FFFFFF', '--muted': '#A9A3D1', '--good': '#B8FF3D', '--btn': 'linear-gradient(135deg,#7B5CFF,#FF3DA8)', '--btn-text': '#fff',
+        '--btn-border': '1px solid rgba(255,255,255,.25)', '--btn-radius': '999px', '--btn-shadow': '0 0 22px rgba(255,61,168,.45)', '--pad': 'rgba(26,22,60,.75)', '--pad-text': '#fff' },
+    },
+  };
+  const T = THEMES[THEME_NAME];
+  Object.entries(T.css).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+  const FONT = `'${T.font}', sans-serif`;
+
+  // ---------- 규칙 ----------
+  // 계단 i 의 가로 위치 xs[i] (칸 단위). 다음 계단은 왼쪽(-1) 또는 오른쪽(+1) 한 칸 위.
+  const MAX_TIME = 1, GAIN = .14;
+  const drain = n => .16 + Math.min(.55, n * .006);   // 초당 줄어드는 양 — 올라갈수록 빨라짐
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  let W = 0, H = 0, DPR = 1, S = 40;                  // S = 계단 한 칸 크기(px)
+  let xs, at, timeLeft, score, best = 0, state = 'ready', started = false;
+  let px = 0, py = 0, camX = 0, camY = 0, hop = 0, fall = 0, facing = 1, lastT = performance.now();
+
+  function makeStairs(from, n) {
+    let dir = Math.random() < .5 ? -1 : 1;
+    for (let i = 0; i < n; i++) {
+      // 같은 방향으로 1~5칸 이어지다 꺾인다 → 지그재그
+      if (xs.length > 1 && Math.random() < .32) dir = -dir;
+      xs.push(xs[xs.length - 1] + dir);
+    }
+  }
+  function reset() {
+    xs = [0]; makeStairs(0, 60);
+    at = 0; timeLeft = MAX_TIME; score = 0; state = 'ready'; hop = 0; fall = 0; facing = xs[1] > xs[0] ? 1 : -1;
+    px = 0; py = 0; camX = 0; camY = 0;
+    document.getElementById('over').classList.remove('on');
+    PG.score(0);
+  }
+  function jump(dir) {
+    if (state === 'dead') return;
+    if (state === 'ready') { state = 'play'; if (!started) { started = true; PG.gameStart(); } }
+    facing = dir;
+    const next = xs[at + 1];
+    if (next - xs[at] !== dir) {               // 계단이 없는 쪽 → 떨어짐
+      px = xs[at] + dir; py = at + 1; hop = 1;
+      return die('miss');
+    }
+    at++; score++; hop = 1;
+    timeLeft = Math.min(MAX_TIME, timeLeft + GAIN);
+    if (xs.length - at < 30) makeStairs(xs.length, 40);
+    PG.score(score);
+    beep(500 + (score % 8) * 45, .05, 'triangle', .045);
+    if (score % 50 === 0) { beep(1047, .15, 'square', .05); PG.vibrate(20); }
+  }
+  function die(why) {
+    if (state === 'dead') return;
+    state = 'dead'; fall = .001;
+    beep(180, .35, 'sawtooth', .05); PG.vibrate(40);
+    const isNew = score > best; if (isNew) best = score;
+    PG.save({ best }); PG.gameOver(score); started = false;
+    setTimeout(() => {
+      document.getElementById('overTitle').textContent = why === 'time' ? '시간이 다 됐어요!' : '으앗, 떨어졌어요!';
+      document.getElementById('finalScore').textContent = `${score}계단`;
+      document.getElementById('finalBest').textContent = `최고 기록 ${best}계단`;
+      document.getElementById('newBest').innerHTML = isNew && score > 0 ? '<span class="new">최고 기록 달성!</span>' : '';
+      document.getElementById('over').classList.add('on');
+      document.getElementById('again').focus();
+    }, 800);
+  }
+
+  function update(dt) {
+    if (state === 'play') {
+      timeLeft -= drain(score) * dt;
+      if (timeLeft <= 0) { timeLeft = 0; die('time'); }
+    }
+    if (state !== 'dead' || fall === 0) { px += (xs[at] - px) * Math.min(1, dt * 18); py += (at - py) * Math.min(1, dt * 18); }
+    if (fall > 0) fall += dt * 1.6;
+    hop = Math.max(0, hop - dt * 6);
+    camX += (px - camX) * Math.min(1, dt * 6); camY += (py - camY) * Math.min(1, dt * 6);
+  }
+
+  // ---------- 그리기 ----------
+  function layout() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    S = Math.max(26, Math.min(W / 7.5, H / 13));
+    bg = null;
+  }
+  function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  let bg = null;
+  function drawBg() {
+    if (!bg) {
+      bg = document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
+      const b = bg.getContext('2d'); b.scale(DPR, DPR);
+      const g = b.createLinearGradient(0, 0, 0, H); g.addColorStop(0, T.sky[0]); g.addColorStop(1, T.sky[1]); b.fillStyle = g; b.fillRect(0, 0, W, H);
+      b.fillStyle = T.neon ? '#fff' : 'rgba(255,255,255,.55)';
+      for (let i = 0; i < 60; i++) { b.globalAlpha = T.neon ? .2 + (i % 5) * .12 : .5; b.beginPath(); b.arc((i * 137.5) % W, (i * 71.3) % H, T.neon ? (i % 3) * .5 + .6 : 1.6, 0, 7); b.fill(); }
+      b.globalAlpha = 1;
+    }
+    ctx.drawImage(bg, 0, 0, W, H);
+  }
+  // 칸 좌표 → 화면 좌표 (내 캐릭터가 화면 가운데 아래쪽 1/3 지점)
+  const sx = x => W / 2 + (x - camX) * S;
+  const sy = y => H * .62 - (y - camY) * S * .82;
+  function stair(i) {
+    const x = sx(xs[i]) - S * .5, y = sy(i), w = S, h = S * .42;
+    if (y < -S || y > H + S) return;
+    const c = T.step[Math.floor(i / 10) % T.step.length];
+    if (T.neon) { ctx.shadowColor = c; ctx.shadowBlur = 14; }
+    rr(x + 1, y, w - 2, h, S * .14);
+    ctx.fillStyle = T.neon ? 'rgba(20,18,48,.9)' : c; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = T.neon ? 2 : 3; ctx.strokeStyle = T.neon ? c : T.ink; ctx.stroke();
+    if (!T.neon) { ctx.fillStyle = 'rgba(255,255,255,.45)'; rr(x + w * .14, y + h * .2, w * .4, h * .22, h * .1); ctx.fill(); }
+    if (i % 10 === 0 && i > 0) { ctx.font = `${Math.round(S * .32)}px ${FONT}`; ctx.textAlign = 'center'; ctx.fillStyle = T.neon ? c : T.ink; ctx.fillText(String(i), x + w / 2, y + h + S * .35); }
+  }
+  function ball() {
+    const lift = Math.sin(hop * Math.PI) * S * .45;
+    const x = sx(px), y = sy(py) - S * .36 - lift + (fall > 0 ? fall * fall * H * .6 : 0), r = S * .34;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(fall > 0 ? fall * 6 * facing : 0);
+    ctx.scale(1 + (hop > .8 ? .12 : 0), 1 - (hop > .8 ? .12 : 0));
+    if (T.neon) { ctx.shadowColor = T.ball; ctx.shadowBlur = 20; }
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fillStyle = T.ball; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.lineWidth = Math.max(2, r * .14); ctx.strokeStyle = T.ink; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(-r * .3, -r * .45, r * .3, r * .16, -.5, 0, 7); ctx.fill();
+    // 눈 (바라보는 방향)
+    for (const e of [-.18, .28]) { ctx.beginPath(); ctx.arc(facing * (r * .05) + e * r, -r * .05, r * .12, 0, 7); ctx.fillStyle = '#1A1033'; ctx.fill(); }
+    ctx.beginPath(); ctx.arc(facing * r * .1 + r * .05, r * .25, r * .18, .15 * Math.PI, .85 * Math.PI); ctx.lineWidth = Math.max(1.5, r * .1); ctx.stroke();
+    ctx.restore();
+  }
+  function hud() {
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const s = Math.round(Math.min(60, H * .08));
+    ctx.font = `${s}px ${FONT}`;
+    if (T.neon) { ctx.shadowColor = 'rgba(34,225,255,.9)'; ctx.shadowBlur = 16; }
+    ctx.lineWidth = Math.max(4, s * .14); ctx.strokeStyle = T.neon ? '#0B0A1F' : T.ink;
+    const y = Math.max(54, H * .1);
+    ctx.strokeText(String(score), W / 2, y); ctx.fillStyle = T.text; ctx.fillText(String(score), W / 2, y); ctx.shadowBlur = 0;
+    // 시간 막대
+    const bw = Math.min(W * .62, 300), bx = (W - bw) / 2, by = y + s * .6;
+    rr(bx, by, bw, 14, 7); ctx.fillStyle = T.neon ? 'rgba(255,255,255,.12)' : 'rgba(26,16,51,.25)'; ctx.fill();
+    const k = timeLeft / MAX_TIME;
+    if (k > 0) { rr(bx, by, Math.max(14, bw * k), 14, 7); ctx.fillStyle = k < .3 ? T.barLow : T.bar; if (T.neon) { ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12; } ctx.fill(); ctx.shadowBlur = 0; }
+    if (!T.neon) { rr(bx, by, bw, 14, 7); ctx.lineWidth = 2.5; ctx.strokeStyle = T.ink; ctx.stroke(); }
+    if (state === 'ready') {
+      ctx.font = `${Math.round(s * .42)}px ${FONT}`; ctx.lineWidth = 5;
+      const t1 = '다음 계단이 있는 쪽을 눌러요', t2 = best ? `최고 ${best}계단` : '← → 키도 돼요';
+      for (const [t, yy] of [[t1, H * .3], [t2, H * .3 + s * .6]]) { ctx.strokeText(t, W / 2, yy); ctx.fillStyle = '#fff'; ctx.fillText(t, W / 2, yy); }
+    }
+  }
+  function frame(now) {
+    const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
+    update(dt);
+    drawBg();
+    const first = Math.max(0, at - 14), last = Math.min(xs.length - 1, at + 20);
+    for (let i = last; i >= first; i--) stair(i);
+    ball(); hud();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- 입력 ----------
+  const press = (dir, el) => { el?.classList.add('hit'); setTimeout(() => el?.classList.remove('hit'), 90); jump(dir); };
+  const L = document.getElementById('left'), R = document.getElementById('right');
+  L.addEventListener('pointerdown', e => { e.preventDefault(); press(-1, L); });
+  R.addEventListener('pointerdown', e => { e.preventDefault(); press(1, R); });
+  cv.addEventListener('pointerdown', e => press(e.clientX < W / 2 ? -1 : 1));
+  window.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (e.key === 'ArrowLeft' || e.key === 'a') { e.preventDefault(); press(-1, L); }
+    else if (e.key === 'ArrowRight' || e.key === 'd') { e.preventDefault(); press(1, R); }
+    else if ((e.key === ' ' || e.key === 'Enter') && state === 'dead') reset();
+  });
+  document.getElementById('again').addEventListener('click', reset);
+
+  // ---------- 소리 ----------
+  let ac = null, muted = false;
+  function beep(freq, dur = .08, type = 'square', vol = .05) {
+    if (muted) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, ac.currentTime); g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + dur);
+      o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + dur);
+    } catch (e) {}
+  }
+  const soundBtn = document.getElementById('sound');
+  const drawSoundIcon = () => {
+    soundBtn.innerHTML = muted
+      ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5"/></svg>'
+      : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>';
+    soundBtn.setAttribute('aria-label', muted ? '소리 켜기' : '소리 끄기');
+  };
+  soundBtn.addEventListener('pointerdown', e => e.stopPropagation());
+  soundBtn.addEventListener('click', () => { muted = !muted; drawSoundIcon(); });
+  drawSoundIcon();
+
+  // ---------- 시작 ----------
+  window.addEventListener('resize', layout);
+  layout(); reset();
+  requestAnimationFrame(frame);
+  PG.load().then(save => { if (save && typeof save.best === 'number') best = save.best; PG.ready(); });
+  window.__jump = { get state() { return state; }, get score() { return score; }, get next() { return xs[at + 1] - xs[at]; }, jump, get time() { return timeLeft; } };
+})();
+</script>
+</body>
+</html>

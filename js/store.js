@@ -17,6 +17,9 @@ const blank = () => ({
   missions: {},                       // date → { key: true }
   flags: {},                          // date → { invited: true }
   saves: {},                          // slug → 게임이 PG.save로 보낸 데이터
+  friends: [],                        // [{ id, at }] 내가 추가한 친구
+  playedWith: {},                     // id → { slug, at, count } 같이 플레이한 기록
+  myCode: null,                       // 내 친구 코드 (NOL-XXXX)
 });
 
 let S = load();
@@ -152,6 +155,39 @@ export function setSave(slug, data) {
   try { JSON.stringify(data); } catch { return; }
   S.saves[slug] = data;
   persist();
+}
+
+// ---------- 친구 ----------
+export function friendIds() { return S.friends.map(f => f.id); }
+export function isFriend(id) { return S.friends.some(f => f.id === id); }
+export function addFriend(id) {
+  if (!id || isFriend(id)) return false;
+  S.friends.unshift({ id, at: Date.now() });
+  persist();
+  return true;
+}
+export function removeFriend(id) {
+  S.friends = S.friends.filter(f => f.id !== id);
+  persist();
+}
+/** 플레이 화면에 같이 있던 친구 기록 (최근 같이 한 친구) */
+export function recordPlayedWith(ids, slug) {
+  for (const id of ids) {
+    const prev = S.playedWith[id];
+    S.playedWith[id] = { slug, at: Date.now(), count: (prev?.count || 0) + 1 };
+  }
+  persist();
+}
+export function playedWith() {
+  return Object.entries(S.playedWith).map(([id, v]) => ({ id, ...v })).sort((a, b) => b.at - a.at);
+}
+export function myCode() {
+  if (!S.myCode) {
+    const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    S.myCode = 'NOL-' + Array.from({ length: 4 }, () => abc[Math.floor(Math.random() * abc.length)]).join('');
+    persist();
+  }
+  return S.myCode;
 }
 
 // ---------- 전체 초기화 (내 게임 화면) ----------

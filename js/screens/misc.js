@@ -1,8 +1,7 @@
-// 랭킹 · 친구(준비 중) · 카테고리 · 검색
-import { allGames, CATEGORIES, esc, asset } from '../data.js';
+// 랭킹 · 카테고리 · 검색
+import { allGames, CATEGORIES, esc } from '../data.js';
 import { icon } from '../icons.js';
-import { gameCard, toast, copyText, goBack } from '../ui.js';
-import * as store from '../store.js';
+import { gameCard, goBack } from '../ui.js';
 import { rankRows, onPlayClick } from './home.js';
 
 const head = (title, back = false) => `<header class="hero-head"><div class="page topbar">
@@ -24,22 +23,6 @@ export function ranking(view) {
   <div class="page pad"><div class="sec-head"><h2>지금 인기</h2><span class="badge badge-pink">LIVE</span><span class="sub">플레이 수·추천률 기준 (연습용 예시)</span></div>
   <div class="card" style="padding:8px 16px"><div class="rank-list">${rankRows(allGames())}</div></div></div>`;
   return bind(view);
-}
-
-export function friends(view) {
-  view.innerHTML = `${head('친구')}
-  <div class="page pad"><div class="card soon-page" style="margin-top:20px">
-    <div class="big"><img src="${asset('assets/img/app-icon.webp')}" alt="" style="border-radius:28px;border:3px solid var(--ink)"></div>
-    <h2>친구 기능은 준비 중이에요</h2>
-    <p style="color:var(--muted);margin:10px 0 18px">친구 목록·랭킹·함께 하기가 곧 열려요.<br>지금은 초대 링크로 친구를 불러 보세요.</p>
-    <button class="btn btn-yellow btn-lg" data-invite>${icon('userPlus', 20)}초대 링크 복사</button>
-  </div></div>`;
-  return bind(view, async e => {
-    if (!e.target.closest('[data-invite]')) return;
-    await copyText(asset('index.html'));
-    store.setFlag('invited');
-    toast('초대 링크 복사! 리워드에서 +30 받기');
-  });
 }
 
 export function category(view, id) {

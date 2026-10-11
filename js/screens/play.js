@@ -144,6 +144,8 @@ export function render(view, slug) {
   };
 
   // ---- 게임 호스트 ----
+  store.recordPlayedWith(['minji', 'hajun'], slug);   // 최근 같이 한 친구
+
   const host = createHost({
     iframe, slug,
     onEvent(type, data) {
@@ -199,7 +201,7 @@ export function render(view, slug) {
     if (!text) return;
     say('나', text);
     inp.value = '';
-    if (matchMedia('(pointer: fine)').matches) iframe.focus();
+    inp.focus();   // 보낸 뒤에도 입력창에 그대로 남아 계속 칠 수 있게
     if (!ai) { later(canned, 1800); return; }
     if (busy) queued.push(text);   // 답을 기다리는 중이면 모아서 다음에 함께 보낸다
     else askAi('message', { text });
