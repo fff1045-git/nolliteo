@@ -16,7 +16,9 @@ async function getJSON(url, opts = {}, ms = 1500) {
 
 /** 서버가 켜져 있으면 대화 객체를, 아니면 null */
 export async function connectAiFriends(game) {
-  try { await getJSON(`${endpoint}/health`); } catch { return null; }
+  // 크롬은 처음에 '로컬 네트워크 접근' 허용을 묻는다. 사용자가 고를 때까지 기다린다
+  // (서버가 꺼져 있거나 거부하면 바로 실패하므로 오래 걸리지 않는다).
+  try { await getJSON(`${endpoint}/health`, {}, 60000); } catch { return null; }
   const room = `${game.slug}-${Date.now().toString(36)}`;
   const info = { name: game.name, desc: game.description };
   return {
