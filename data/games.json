@@ -3,8 +3,16 @@
     "slug": "block-pop",
     "name": "블록 팡팡",
     "genre": "퍼즐",
-    "categories": ["puzzle", "versus"],
-    "tags": ["퍼즐", "짧은세션", "손맛", "친구랭킹"],
+    "categories": [
+      "puzzle",
+      "versus"
+    ],
+    "tags": [
+      "퍼즐",
+      "짧은세션",
+      "손맛",
+      "친구랭킹"
+    ],
     "developer": "놀이터 스튜디오",
     "color": "#FFD23F",
     "orientation": "portrait",
@@ -21,8 +29,15 @@
     "slug": "2048",
     "name": "2048 머지",
     "genre": "퍼즐",
-    "categories": ["puzzle"],
-    "tags": ["퍼즐", "두뇌", "짧은세션", "힐링"],
+    "categories": [
+      "puzzle"
+    ],
+    "tags": [
+      "퍼즐",
+      "두뇌",
+      "짧은세션",
+      "힐링"
+    ],
     "developer": "놀이터 스튜디오",
     "color": "#4CC9F0",
     "orientation": "portrait",
@@ -35,11 +50,70 @@
     "icon": "assets/icons/2048-512.png"
   },
   {
+    "slug": "pop-star",
+    "name": "팝팝 스타",
+    "genre": "퍼즐",
+    "categories": [
+      "puzzle",
+      "new"
+    ],
+    "tags": [
+      "퍼즐",
+      "힐링",
+      "짧은세션",
+      "손맛"
+    ],
+    "developer": "놀이터 스튜디오",
+    "color": "#B9A3FF",
+    "orientation": "portrait",
+    "status": "live",
+    "badge": "NEW",
+    "friendsNow": 2,
+    "rankDelta": null,
+    "description": "같은 색 별이 두 개 이상 붙어 있으면 톡 눌러 고르고, 한 번 더 눌러 팡! 한꺼번에 많이 터뜨릴수록 점수가 커져요. 스테이지 목표 점수를 넘기면 다음 판으로.",
+    "path": "games/pop-star/index.html",
+    "image": "assets/img/pop-star.webp",
+    "icon": "assets/icons/pop-star-512.png"
+  },
+  {
+    "slug": "flap-bird",
+    "name": "파닥 버드",
+    "genre": "액션",
+    "categories": [
+      "action",
+      "versus",
+      "new"
+    ],
+    "tags": [
+      "액션",
+      "손맛",
+      "짧은세션",
+      "친구랭킹"
+    ],
+    "developer": "놀이터 스튜디오",
+    "color": "#4CC9F0",
+    "orientation": "portrait",
+    "status": "live",
+    "badge": "NEW",
+    "friendsNow": 4,
+    "rankDelta": null,
+    "description": "탭 한 번에 파닥! 옆으로 흘러오는 파이프 사이 틈을 지나가세요. 파이프 하나에 1점, 땅이나 파이프에 닿으면 끝. 가로로 넓은 화면에서도 같은 난이도.",
+    "path": "games/flap-bird/index.html",
+    "image": "assets/img/flap-bird.webp",
+    "icon": "assets/icons/flap-bird-512.png"
+  },
+  {
     "slug": "moon-garden",
     "name": "달빛 정원 퍼즐",
     "genre": "퍼즐",
-    "categories": ["puzzle"],
-    "tags": ["힐링", "퍼즐", "10분컷"],
+    "categories": [
+      "puzzle"
+    ],
+    "tags": [
+      "힐링",
+      "퍼즐",
+      "10분컷"
+    ],
     "developer": "달토끼 게임즈",
     "color": "#B9A3FF",
     "orientation": "portrait",
@@ -52,8 +126,15 @@
     "slug": "endless-jump",
     "name": "무한 점프",
     "genre": "액션",
-    "categories": ["action", "new"],
-    "tags": ["손맛", "액션", "짧은세션"],
+    "categories": [
+      "action",
+      "new"
+    ],
+    "tags": [
+      "손맛",
+      "액션",
+      "짧은세션"
+    ],
     "developer": "점프점프 랩",
     "color": "#2EE6A6",
     "orientation": "portrait",
@@ -67,8 +148,14 @@
     "slug": "cat-diner",
     "name": "고양이 식당",
     "genre": "경영",
-    "categories": ["tycoon"],
-    "tags": ["경영", "힐링", "귀여움"],
+    "categories": [
+      "tycoon"
+    ],
+    "tags": [
+      "경영",
+      "힐링",
+      "귀여움"
+    ],
     "developer": "냥냥 스튜디오",
     "color": "#FF8C42",
     "orientation": "portrait",
@@ -81,8 +168,16 @@
     "slug": "star-link",
     "name": "별빛 연결",
     "genre": "퍼즐",
-    "categories": ["puzzle", "versus", "new"],
-    "tags": ["두뇌", "퍼즐", "친구랭킹"],
+    "categories": [
+      "puzzle",
+      "versus",
+      "new"
+    ],
+    "tags": [
+      "두뇌",
+      "퍼즐",
+      "친구랭킹"
+    ],
     "developer": "별밤 게임즈",
     "color": "#4CC9F0",
     "orientation": "portrait",

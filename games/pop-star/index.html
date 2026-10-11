@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>팝팝 스타</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&family=Noto+Sans+KR:wght@700&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; background: var(--bg); }
+  canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; }
+  .ui { position: fixed; font-family: var(--font); }
+  #sound { top: max(10px, env(safe-area-inset-top)); right: 10px; width: 44px; height: 44px; border-radius: 50%; border: var(--btn-border); background: rgba(255,255,255,.1); color: #fff; display: grid; place-items: center; padding: 0; cursor: pointer; }
+  #over { inset: 0; display: none; place-items: center; background: var(--scrim); }
+  #over.on { display: grid; }
+  .panel { width: min(84vw, 340px); background: var(--panel); color: var(--panel-text); border: var(--panel-border); border-radius: 26px; box-shadow: var(--panel-shadow); padding: 24px 20px 20px; text-align: center; animation: pop .25s ease-out; }
+  .panel h2 { margin: 0; font-weight: 400; font-size: 30px; }
+  .panel .s { font-size: 52px; color: var(--accent2); line-height: 1.1; margin: 8px 0 2px; }
+  .panel .b { font-family: "Noto Sans KR", sans-serif; font-weight: 700; font-size: 14px; color: var(--muted); }
+  .panel button { margin-top: 18px; width: 100%; min-height: 56px; border: var(--btn-border); border-radius: var(--btn-radius); background: var(--btn); box-shadow: var(--btn-shadow); font: inherit; font-size: 21px; color: var(--btn-text); cursor: pointer; }
+  .panel button:active { transform: translateY(2px) scale(.98); }
+  #msg { left: 50%; top: 42%; transform: translate(-50%, -50%); background: var(--msg); color: var(--msg-text); border: var(--panel-border); border-radius: 18px; padding: 10px 20px; font-size: 22px; box-shadow: var(--panel-shadow); opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; text-align: center; }
+  #msg small { display: block; font-family: "Noto Sans KR", sans-serif; font-weight: 700; font-size: 13px; opacity: .8; }
+  #msg.on { opacity: 1; }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="팝팝 스타 게임 판"></canvas>
+<button id="sound" class="ui" aria-label="소리 끄기"></button>
+<div id="msg" class="ui" role="status"></div>
+<div id="over" class="ui" role="dialog" aria-label="게임 결과">
+  <div class="panel">
+    <h2 id="overTitle">아쉬워요!</h2>
+    <div class="s" id="finalScore">0</div>
+    <div class="b" id="finalSub">스테이지 1 · 최고 기록 0</div>
+    <button id="again">처음부터 다시</button>
+  </div>
+</div>
+<script src="../../sdk/playground-sdk.js" data-game="pop-star"></script>
+<script>
+(() => {
+  'use strict';
+  // ---------- 테마 (1안 candy / 2안 neon) ----------
+  const THEME_NAME = 'candy';
+  const THEMES = {
+    candy: {
+      font: 'Jua', bg: '#1A1033', ink: '#1A1033', text: '#FFFFFF', sub: '#B9A3FF', accent: '#FFD23F', good: '#2EE6A6',
+      colors: ['#FFD23F', '#FF5DA2', '#2EE6A6', '#4CC9F0', '#6C4CF5'], jelly: false,
+      css: { '--bg': '#1A1033', '--font': 'Jua, sans-serif', '--scrim': 'rgba(26,16,51,.72)', '--panel': '#fff', '--panel-text': '#1A1033', '--panel-border': '3px solid #1A1033',
+        '--panel-shadow': '0 6px 0 #1A1033', '--accent2': '#6C4CF5', '--muted': '#5A4F7A', '--btn': '#FFD23F', '--btn-text': '#1A1033', '--btn-border': '3px solid #1A1033',
+        '--btn-radius': '18px', '--btn-shadow': '0 4px 0 #1A1033', '--msg': '#FFD23F', '--msg-text': '#1A1033' },
+    },
+    neon: {
+      font: 'Black Han Sans', bg: '#0B0A1F', ink: 'rgba(6,4,20,.6)', text: '#FFFFFF', sub: '#A9A3D1', accent: '#22E1FF', good: '#B8FF3D',
+      colors: ['#FFC23D', '#FF3DA8', '#B8FF3D', '#22E1FF', '#8B5CFF'], jelly: true,
+      css: { '--bg': '#0B0A1F', '--font': '"Black Han Sans", sans-serif', '--scrim': 'rgba(5,4,16,.72)', '--panel': 'rgba(24,21,56,.94)', '--panel-text': '#F4F2FF', '--panel-border': '1.5px solid rgba(123,92,255,.7)',
+        '--panel-shadow': '0 0 40px rgba(123,92,255,.45)', '--accent2': '#FFFFFF', '--muted': '#A9A3D1', '--btn': 'linear-gradient(135deg,#7B5CFF,#FF3DA8)', '--btn-text': '#fff', '--btn-border': '1px solid rgba(255,255,255,.25)',
+        '--btn-radius': '999px', '--btn-shadow': '0 0 22px rgba(255,61,168,.5)', '--msg': 'rgba(24,21,56,.94)', '--msg-text': '#fff' },
+    },
+  };
+  const T = THEMES[THEME_NAME];
+  Object.entries(T.css).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+  const FONT = `'${T.font}', sans-serif`;
+
+  // ---------- 규칙 ----------
+  const N = 10;
+  const target = lv => 1000 + (lv - 1) * 2000 + Math.max(0, lv - 5) * 500;   // 1000, 3000, 5000, 7000, 9000, 11500...
+  const groupScore = n => n * n * 5;
+  const bonusFor = left => Math.max(0, 2000 - left * left * 20);
+
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  let W = 0, H = 0, DPR = 1, L = {};
+  let grid;            // grid[c][r] = { id, color, x, y } | null   (r=0 위쪽)
+  let level = 1, score = 0, best = 0, stageStart = 0, shown = 0;
+  let selected = [], busy = false, over = false, started = false, nextId = 1;
+  const fx = [];
+
+  // ---------- 판 ----------
+  function newBoard() {
+    grid = Array.from({ length: N }, (_, c) => Array.from({ length: N }, (_, r) => ({ id: nextId++, color: Math.floor(Math.random() * 5), x: c, y: r - N - Math.random() * 2 })));
+  }
+  function boardFromColors(cols) {
+    grid = cols.map((col, c) => col.map((v, r) => (v == null ? null : { id: nextId++, color: v, x: c, y: r })));
+  }
+  const colors = () => grid.map(col => col.map(t => (t ? t.color : null)));
+  function groupAt(c, r) {
+    const t = grid[c]?.[r];
+    if (!t) return [];
+    const seen = new Set([c * N + r]), out = [[c, r]], q = [[c, r]];
+    while (q.length) {
+      const [x, y] = q.pop();
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy, k = nx * N + ny;
+        if (nx < 0 || ny < 0 || nx >= N || ny >= N || seen.has(k)) continue;
+        const o = grid[nx][ny];
+        if (o && o.color === t.color) { seen.add(k); out.push([nx, ny]); q.push([nx, ny]); }
+      }
+    }
+    return out;
+  }
+  function hasMoves() {
+    for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) {
+      const t = grid[c][r];
+      if (!t) continue;
+      if ((c + 1 < N && grid[c + 1][r]?.color === t.color) || (r + 1 < N && grid[c][r + 1]?.color === t.color)) return true;
+    }
+    return false;
+  }
+  const left = () => grid.reduce((s, col) => s + col.filter(Boolean).length, 0);
+  function settle() {
+    // 아래로 떨어뜨리고, 빈 세로줄은 왼쪽으로 당긴다
+    const cols = [];
+    for (let c = 0; c < N; c++) {
+      const stack = grid[c].filter(Boolean);
+      if (!stack.length) continue;
+      cols.push([...Array(N - stack.length).fill(null), ...stack]);
+    }
+    while (cols.length < N) cols.push(Array(N).fill(null));
+    grid = cols;
+  }
+
+  // ---------- 진행 ----------
+  function startLevel(lv, keepScore) {
+    level = lv; stageStart = keepScore; score = keepScore; selected = []; over = false;
+    newBoard();
+    persist();
+    say(`스테이지 ${level}`, `목표 ${target(level).toLocaleString('ko-KR')}점`);
+  }
+  function newGame() {
+    document.getElementById('over').classList.remove('on');
+    started = false; shown = 0;
+    startLevel(1, 0);
+    PG.score(0);
+  }
+  function persist() { PG.save(over ? { best } : { board: colors(), score, level, best, stageStart }); }
+
+  function tap(c, r) {
+    if (busy || over) return;
+    const g = groupAt(c, r);
+    if (g.length < 2) { selected = []; beep(180, .05, 'triangle', .03); return; }
+    const isSel = selected.length && selected.some(([x, y]) => x === c && y === r);
+    if (!isSel) { selected = g; beep(520 + g.length * 8, .05, 'triangle', .04); return; }
+    pop(g);
+  }
+  function pop(g) {
+    if (!started) { started = true; PG.gameStart(); }
+    const gained = groupScore(g.length), now = performance.now();
+    g.forEach(([c, r], i) => {
+      const t = grid[c][r];
+      for (let k = 0; k < 4; k++) fx.push({ kind: 'bit', x: L.bx + (c + .5) * L.cell, y: L.by + (r + .5) * L.cell, vx: (Math.random() - .5) * 8, vy: -Math.random() * 7 - 1, s: L.cell * .16, color: T.colors[t.color], t0: now + i * 12, dur: 700 });
+      grid[c][r] = null;
+    });
+    const [c0, r0] = g[0];
+    fx.push({ kind: 'text', text: `+${gained}`, x: L.bx + (c0 + .5) * L.cell, y: L.by + (r0 + .5) * L.cell, size: Math.round(L.cell * .62), color: T.accent, t0: now, dur: 900 });
+    if (g.length >= 8) fx.push({ kind: 'text', text: g.length >= 12 ? '대박!' : '멋져요!', x: W / 2, y: L.by + L.bs * .45, size: Math.round(L.cell * .95), color: T.good, t0: now, dur: 1000 });
+    score += gained; selected = [];
+    [660, 880, 1100].slice(0, g.length >= 8 ? 3 : g.length >= 4 ? 2 : 1).forEach((f, i) => setTimeout(() => beep(f, .08, 'square', .045), i * 50));
+    PG.vibrate(g.length >= 8 ? [20, 30, 20] : 15);
+    if (score > best) best = score;
+    PG.score(score);
+    settle();
+    if (hasMoves()) { persist(); return; }
+    endStage();
+  }
+  function endStage() {
+    busy = true;
+    const rest = left(), bonus = bonusFor(rest);
+    setTimeout(() => {
+      say(`남은 별 ${rest}개`, bonus ? `보너스 +${bonus.toLocaleString('ko-KR')}` : '보너스 없음');
+      score += bonus; if (score > best) best = score; PG.score(score);
+      // 남은 별을 하나씩 터뜨린다
+      const tiles = [];
+      for (let c = 0; c < N; c++) for (let r = N - 1; r >= 0; r--) if (grid[c][r]) tiles.push([c, r]);
+      tiles.forEach(([c, r], i) => setTimeout(() => {
+        const t = grid[c][r]; if (!t) return;
+        fx.push({ kind: 'bit', x: L.bx + (c + .5) * L.cell, y: L.by + (r + .5) * L.cell, vx: (Math.random() - .5) * 6, vy: -Math.random() * 5, s: L.cell * .16, color: T.colors[t.color], t0: performance.now(), dur: 600 });
+        grid[c][r] = null; beep(400 + i * 20, .04, 'triangle', .03);
+      }, 600 + i * 70));
+      setTimeout(() => {
+        busy = false;
+        if (score >= target(level)) {
+          beep(784, .12, 'square', .05); setTimeout(() => beep(1047, .18, 'square', .05), 120);
+          say('스테이지 클리어!', `다음 목표 ${target(level + 1).toLocaleString('ko-KR')}점`);
+          setTimeout(() => startLevel(level + 1, score), 1300);
+        } else lose();
+      }, 900 + tiles.length * 70);
+    }, 450);
+  }
+  function lose() {
+    over = true; started = false;
+    persist();
+    PG.gameOver(score);
+    beep(220, .3, 'sawtooth', .05);
+    document.getElementById('overTitle').textContent = '목표 점수에 못 미쳤어요';
+    document.getElementById('finalScore').textContent = score.toLocaleString('ko-KR');
+    document.getElementById('finalSub').textContent = `스테이지 ${level} · 목표 ${target(level).toLocaleString('ko-KR')} · 최고 ${best.toLocaleString('ko-KR')}`;
+    document.getElementById('over').classList.add('on');
+    document.getElementById('again').focus();
+  }
+  document.getElementById('again').addEventListener('click', newGame);
+
+  // ---------- 소리 ----------
+  let ac = null, muted = false;
+  function beep(freq, dur = .08, type = 'square', vol = .05) {
+    if (muted) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, ac.currentTime); g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + dur);
+      o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + dur);
+    } catch (e) {}
+  }
+  const soundBtn = document.getElementById('sound');
+  const drawSoundIcon = () => {
+    soundBtn.innerHTML = muted
+      ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5"/></svg>'
+      : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>';
+    soundBtn.setAttribute('aria-label', muted ? '소리 켜기' : '소리 끄기');
+  };
+  soundBtn.addEventListener('click', () => { muted = !muted; drawSoundIcon(); });
+  drawSoundIcon();
+
+  function say(a, b) {
+    const m = document.getElementById('msg');
+    m.innerHTML = `${a}${b ? `<small>${b}</small>` : ''}`;
+    m.classList.add('on');
+    clearTimeout(say.t); say.t = setTimeout(() => m.classList.remove('on'), 1500);
+  }
+
+  // ---------- 배치 · 그리기 ----------
+  function layout() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const top = Math.max(118, H * .19);
+    const bs = Math.min(W * .94, H - top - 24, 600);
+    L = { bs, cell: bs / N, bx: (W - bs) / 2, by: top + Math.max(0, (H - top - bs - 24) * .35), top };
+    bg = null;
+  }
+  function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  function shade(hex, k) {
+    const n = parseInt(hex.slice(1), 16), f = c => Math.max(0, Math.min(255, Math.round(k > 0 ? c + (255 - c) * k : c * (1 + k))));
+    return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`;
+  }
+  function starPath(cx, cy, R) {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + i * Math.PI / 5, rad = i % 2 ? R * .45 : R;
+      ctx.lineTo(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad);
+    }
+    ctx.closePath();
+  }
+  function tile(x, y, s, color, sel, pulse) {
+    const pad = s * .05;
+    const k = sel ? 1 + .06 * pulse : 1, ss = s * k, ox = x - (ss - s) / 2, oy = y - (ss - s) / 2;
+    rr(ox + pad, oy + pad, ss - pad * 2, ss - pad * 2, ss * .2);
+    if (T.jelly) {
+      const g = ctx.createLinearGradient(0, oy, 0, oy + ss); g.addColorStop(0, shade(color, .4)); g.addColorStop(.6, color); g.addColorStop(1, shade(color, -.25));
+      ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = Math.max(1.2, s * .05); ctx.strokeStyle = sel ? '#fff' : shade(color, .55); ctx.stroke();
+    } else {
+      ctx.fillStyle = color; ctx.fill();
+      ctx.lineWidth = Math.max(1.5, s * .07); ctx.strokeStyle = sel ? '#fff' : T.ink; ctx.stroke();
+    }
+    starPath(ox + ss / 2, oy + ss / 2 + ss * .02, ss * .27);
+    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill();
+    if (!T.jelly) { ctx.lineWidth = Math.max(1, s * .035); ctx.strokeStyle = T.ink; ctx.stroke(); }
+  }
+  let bg = null;
+  function drawBg() {
+    if (!bg) {
+      bg = document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
+      const b = bg.getContext('2d'); b.scale(DPR, DPR);
+      b.fillStyle = T.bg; b.fillRect(0, 0, W, H);
+      if (T.jelly) {
+        for (const [cx, cy, r, c] of [[W * .1, H * .02, W * .9, 'rgba(123,92,255,.38)'], [W * .95, H * .2, W * .75, 'rgba(255,61,168,.24)'], [W * .5, H * 1.05, W * .95, 'rgba(34,225,255,.14)']]) {
+          const g = b.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, c); g.addColorStop(1, 'rgba(11,10,31,0)'); b.fillStyle = g; b.fillRect(0, 0, W, H);
+        }
+      } else {
+        b.fillStyle = 'rgba(255,255,255,.06)';
+        for (let y = 9; y < H; y += 18) for (let x = 9; x < W; x += 18) { b.beginPath(); b.arc(x, y, 1.4, 0, 7); b.fill(); }
+      }
+    }
+    ctx.drawImage(bg, 0, 0, W, H);
+  }
+  function drawHud() {
+    shown += (score - shown) * .2; if (Math.abs(score - shown) < .5) shown = score;
+    const y = L.top * .5, tg = target(level), reached = score >= tg;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `${Math.round(Math.min(15, W * .04))}px ${FONT}`;
+    ctx.fillStyle = T.sub;
+    ctx.fillText(`스테이지 ${level}   ·   목표 ${tg.toLocaleString('ko-KR')}   ·   최고 ${best.toLocaleString('ko-KR')}`, W / 2, y - Math.min(36, H * .05));
+    ctx.font = `${Math.round(Math.min(52, W * .12))}px ${FONT}`;
+    ctx.fillStyle = T.jelly ? '#fff' : T.accent;
+    if (T.jelly) { ctx.shadowColor = 'rgba(34,225,255,.85)'; ctx.shadowBlur = 18; }
+    ctx.fillText(Math.round(shown).toLocaleString('ko-KR'), W / 2, y + 4);
+    ctx.shadowBlur = 0;
+    // 목표 진행 막대
+    const bw = Math.min(W * .6, 260), bx = (W - bw) / 2, by = y + Math.min(34, H * .045);
+    rr(bx, by, bw, 8, 4); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+    const k = Math.min(1, (score - stageStart) / Math.max(1, tg - stageStart));
+    if (k > 0) { rr(bx, by, Math.max(8, bw * k), 8, 4); ctx.fillStyle = reached ? T.good : T.accent; ctx.fill(); }
+    if (selected.length) {
+      const t = `${selected.length}개  +${groupScore(selected.length)}`;
+      ctx.font = `${Math.round(Math.min(16, W * .042))}px ${FONT}`;
+      const w = ctx.measureText(t).width + 26, yy = L.by - 18;
+      rr(W / 2 - w / 2, yy - 13, w, 26, 13); ctx.fillStyle = T.jelly ? 'rgba(24,21,56,.92)' : '#fff'; ctx.fill();
+      ctx.lineWidth = T.jelly ? 1.5 : 2.5; ctx.strokeStyle = T.jelly ? T.accent : T.ink; ctx.stroke();
+      ctx.fillStyle = T.jelly ? '#fff' : T.ink; ctx.fillText(t, W / 2, yy + 1);
+    }
+  }
+  function frame(now) {
+    drawBg(); drawHud();
+    const { bx, by, cell, bs } = L;
+    rr(bx - 6, by - 6, bs + 12, bs + 12, 18);
+    ctx.fillStyle = T.jelly ? 'rgba(16,14,40,.85)' : 'rgba(255,255,255,.06)'; ctx.fill();
+    ctx.lineWidth = T.jelly ? 2 : 3; ctx.strokeStyle = T.jelly ? 'rgba(139,92,255,.75)' : 'rgba(255,255,255,.85)'; ctx.stroke();
+    const sel = new Set(selected.map(([c, r]) => c * N + r));
+    const pulse = (Math.sin(now / 110) + 1) / 2;
+    ctx.save(); rr(bx - 6, by - 6, bs + 12, bs + 12, 18); ctx.clip();
+    for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) {
+      const t = grid[c][r];
+      if (!t) continue;
+      t.x += (c - t.x) * .25; t.y += (r - t.y) * .22;
+      if (Math.abs(c - t.x) < .002) t.x = c; if (Math.abs(r - t.y) < .002) t.y = r;
+      tile(bx + t.x * cell, by + t.y * cell, cell, T.colors[t.color], sel.has(c * N + r), pulse);
+    }
+    ctx.restore();
+    for (let i = fx.length - 1; i >= 0; i--) {
+      const f = fx[i], k = (now - f.t0) / f.dur;
+      if (k < 0) continue;
+      if (k >= 1) { fx.splice(i, 1); continue; }
+      if (f.kind === 'bit') {
+        f.x += f.vx; f.y += f.vy; f.vy += .35;
+        ctx.globalAlpha = 1 - k; ctx.fillStyle = f.color; ctx.fillRect(f.x, f.y, f.s, f.s); ctx.globalAlpha = 1;
+      } else {
+        ctx.save(); ctx.globalAlpha = 1 - k * k; ctx.translate(f.x, f.y - k * 46);
+        ctx.font = `${f.size}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        if (T.jelly) { ctx.shadowColor = f.color; ctx.shadowBlur = 16; }
+        ctx.lineWidth = 5; ctx.strokeStyle = T.jelly ? '#0B0A1F' : T.ink; ctx.strokeText(f.text, 0, 0);
+        ctx.fillStyle = f.color; ctx.fillText(f.text, 0, 0); ctx.restore();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  cv.addEventListener('pointerdown', e => {
+    const rct = cv.getBoundingClientRect();
+    const c = Math.floor((e.clientX - rct.left - L.bx) / L.cell), r = Math.floor((e.clientY - rct.top - L.by) / L.cell);
+    if (c < 0 || r < 0 || c >= N || r >= N) { selected = []; return; }
+    tap(c, r);
+  });
+
+  // ---------- 시작 (이어하기) ----------
+  window.addEventListener('resize', layout);
+  layout();
+  newBoard();
+  requestAnimationFrame(frame);
+  PG.load().then(save => {
+    if (save && typeof save.best === 'number') best = save.best;
+    if (save && Array.isArray(save.board) && save.board.length === N) {
+      boardFromColors(save.board);
+      level = save.level || 1; score = save.score || 0; stageStart = save.stageStart || 0; shown = score;
+      if (!hasMoves()) startLevel(level, stageStart); else say('이어하기!', `스테이지 ${level}`);
+    } else newGame();
+    PG.score(score);
+    PG.ready();
+  });
+  // 테스트·디버그용 (게임 밖에서는 쓰지 않음)
+  window.__pop = { get grid() { return colors(); }, get score() { return score; }, get level() { return level; }, tap, load: cols => { boardFromColors(cols); }, hasMoves };
+})();
+</script>
+</body>
+</html>

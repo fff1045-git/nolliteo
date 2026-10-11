@@ -1,0 +1,33 @@
+{
+  "id": "./?game=pop-star",
+  "name": "팝팝 스타 — 놀이터",
+  "short_name": "팝팝 스타",
+  "description": "같은 색 별이 두 개 이상 붙어 있으면 톡 눌러 고르고, 한 번 더 눌러 팡! 한꺼번에 많이 터뜨릴수록 점수가 커져요. 스테이지 목표 점수를 넘기면 다음 판으로.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#1A1033",
+  "theme_color": "#1A1033",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "../../assets/icons/pop-star-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../../assets/icons/pop-star-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../../assets/icons/pop-star-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

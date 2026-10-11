@@ -176,5 +176,73 @@
   "helpful": 5,
   "date": "2026-10-07",
   "text": "후반 스테이지 설명이 부족해요. 튜토리얼 보강 필요."
+ },
+ {
+  "id": "s16",
+  "slug": "pop-star",
+  "user": "별사냥꾼",
+  "color": "#FFD23F",
+  "rec": true,
+  "playSec": 18000,
+  "helpful": 52,
+  "date": "2026-10-10",
+  "text": "큰 덩어리를 남겨 뒀다가 한 번에 터뜨리는 맛! 마지막에 별 10개 안 남기면 보너스 대박이에요.",
+  "devReply": "남은 별 보너스 꿀팁 정확합니다! 즐겨 주셔서 감사해요."
+ },
+ {
+  "id": "s17",
+  "slug": "pop-star",
+  "user": "퇴근길퍼즐",
+  "color": "#2EE6A6",
+  "rec": true,
+  "playSec": 5400,
+  "helpful": 17,
+  "date": "2026-10-11",
+  "text": "한 번 눌러 고르고 한 번 더 눌러 터뜨리는 방식이라 실수가 적어서 좋아요."
+ },
+ {
+  "id": "s18",
+  "slug": "pop-star",
+  "user": "목표미달",
+  "color": "#FF5DA2",
+  "rec": false,
+  "playSec": 2400,
+  "helpful": 6,
+  "date": "2026-10-11",
+  "text": "스테이지 4부터 목표 점수가 빡세요… 조금만 낮춰 주세요."
+ },
+ {
+  "id": "s19",
+  "slug": "flap-bird",
+  "user": "파닥장인",
+  "color": "#4CC9F0",
+  "rec": true,
+  "playSec": 9000,
+  "helpful": 64,
+  "date": "2026-10-10",
+  "text": "단순한데 미치겠어요ㅋㅋ 친구랑 최고 기록 내기 중. 박자 맞춰 톡톡 누르는 게 핵심.",
+  "devReply": "최고 기록 인증 기다릴게요! 곧 친구 랭킹도 붙일 예정이에요."
+ },
+ {
+  "id": "s20",
+  "slug": "flap-bird",
+  "user": "손가락요정",
+  "color": "#FF8C42",
+  "rec": true,
+  "playSec": 3600,
+  "helpful": 21,
+  "date": "2026-10-11",
+  "text": "PC 키보드 스페이스로도 돼서 좋아요. 가로 화면에서도 잘 돌아가요."
+ },
+ {
+  "id": "s21",
+  "slug": "flap-bird",
+  "user": "1점의벽",
+  "color": "#B9A3FF",
+  "rec": false,
+  "playSec": 1500,
+  "helpful": 9,
+  "date": "2026-10-11",
+  "text": "너무 어려워요ㅠ 첫 파이프 지나기가 제일 힘듦."
  }
 ]
